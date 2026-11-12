@@ -63,6 +63,7 @@ def fetch_day(sat, day):
             if e.code in (404, 204): continue
             raise
         if not buf: continue
+        if buf[:2] == b"\x1f\x8b": buf = gzip.decompress(buf)          # tiles are served gzip-compressed
         for p in decode_points(buf, Z, r, c):
             la, lo = float(p["LATITUDE"]), float(p["LONGITUDE"])
             if not (BBOX[0] <= la <= BBOX[1] and BBOX[2] <= lo <= BBOX[3]): continue
