@@ -16,6 +16,12 @@ Pick an area (draw a box or shape, enter a point and radius, or choose an exampl
 - Weather and air: NASA POWER monthly regional API, 2001–2025: precipitation (PRECTOTCORR), relative humidity (RH2M), maximum temperature (T2M_MAX), topsoil wetness (GWETTOP), aerosol optical depth (AOD_55).
 - Basemap: NASA GIBS WMS (Blue Marble shaded relief, VIIRS Black Marble). Border lines: US Department of State LSIB, served by NASA GIBS.
 
+## Live data, no keys
+- 2026 onward: VIIRS S-NPP, NOAA-20 and NOAA-21 detections from NASA GIBS vector tiles (`VIIRS_*_Thermal_Anomalies_375m_All`, the FIRMS near-real-time feed), fetched daily by a GitHub Action (`.github/workflows/update-live.yml`, `pipeline/update_live.py`). NASA POWER weather for the current year is fetched the same way.
+- Assignment to Bangladesh: a detection counts when it is four times closer to past FIRMS Bangladesh detections than to neighbouring-country ones. Held-out March 2025 days: recall 99.2%, precision 98.5%, monthly count within 1% of the FIRMS country file. Every one of the 7,616 FIRMS Bangladesh detections in March 2025 was present in the GIBS feed.
+- Handover: S-NPP ended on 2 Nov 2026. From November 2026 the series is NOAA-20 converted to S-NPP equivalents. Jan–Oct 2026 check: converted NOAA-20 = 94% of S-NPP (inside the 2019–2025 range of 94–109%); March 2026 was the weakest month at 84%.
+- A month in progress is compared with the same days of that month in past years.
+
 ## Method
 1. Filter: type 0 (presumed vegetation fire); MODIS confidence ≥ 30; VIIRS nominal or high. Static land sources (type 2: kilns, flares) and offshore (type 3) are excluded from counts but exported.
 2. Reference: VIIRS S-NPP from February 2012.
@@ -27,6 +33,16 @@ Pick an area (draw a box or shape, enter a point and radius, or choose an exampl
 - What burned: 52% of VIIRS hotspots fall on shrub, savanna and grass (mostly woody savanna, i.e. jhum fallow in the Chittagong Hill Tracts), 31% on forest, 15% on cropland.
 - Why some years burn more: across 2003–2025, March–April hotspots nationally fall as January–April rainfall rises (Spearman ρ = −0.71) and as March–April humidity rises (ρ = −0.66); the links hold within VIIRS-only years (ρ = −0.62 and −0.73), so they are not an artefact of the MODIS conversion. The app runs the same test, with a permutation p-value, for any drawn area and month.
 - Aerosol optical depth over Bangladesh rose while fires fell, so it is shown as air-quality context, not as a smoke signal.
+
+## Early warning
+- Season tracker: cumulative hotspots 1 Jan–31 May against the P10–P90 range of past years at the same date.
+- What the data supports: rain shifts burning in time. After a wetter January–March, about 67% of March–April burning came in April, against 46% after a drier start (ρ = −0.46 nationally, −0.53 in the Hill Tracts). Early-season counts do not predict the season total (ρ ≈ 0), and pre-season (Nov–Feb) rain is only a weak predictor of the total (tercile hit rate 52% vs 33% by chance), so the app reports timing, not a total forecast.
+
+## Limitations
+- Small, smouldering fires under the Sundarbans mangrove canopy are mostly missed by 375 m and 1 km sensors (e.g. no detections during the reported March 2025 fires).
+- Terra-only months (Nov 2000–Jun 2002) are low confidence; 2022 MODIS Aqua under-recorded spring hotspots.
+- Near-real-time 2026 data will be replaced by FIRMS standard processing a few months later.
+- MERRA-2 aerosol over Bangladesh is dominated by regional pollution, so it is context, not a smoke measure.
 
 ## Validation (leave-one-year-out, 2012–2021)
 | Method | National monthly error | Cell-month error | Cell annual rank ρ |
@@ -44,6 +60,7 @@ mkdir -p analysis app && cp pipeline/{common,harmonize,export}.py analysis/
 python analysis/harmonize.py          # fits, validates, writes analysis/coefficients.json
 python analysis/context.py            # needs data_in/nasa_context.json (POWER + land cover); writes app/context.json
 python analysis/export.py             # writes app/meta.json and app/points.bin
+python pipeline/update_live.py        # 2026+ near-real-time detections and weather (no keys)
 python -c "import gzip,base64;open('app/points.gz.b64.txt','wb').write(base64.b64encode(gzip.compress(open('app/points.bin','rb').read(),9)))"
 ```
 The site is static: serve the files in `site/` (Vercel: import the folder, no build step).

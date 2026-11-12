@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><title>FireBridge</title><meta name="description" content="Harmonized MODIS + VIIRS burning-activity calendar for Bangladesh, built on NASA FIRMS hotspots, MODIS land cover and NASA POWER weather."><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en"><head><title>FireBridge</title><meta name="description" content="Harmonized MODIS + VIIRS burning-activity calendar for Bangladesh, 2001 to today, built on NASA FIRMS, MODIS land cover and NASA POWER."><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -214,6 +214,7 @@ tr.chosen td{font-weight:600}
           <option value="modis">MODIS Terra + Aqua, raw</option>
           <option value="snpp">VIIRS S-NPP, raw</option>
           <option value="n20">VIIRS NOAA-20, raw</option>
+          <option value="n21">VIIRS NOAA-21, raw (2026)</option>
         </select></div>
       <div class="field"><label for="lcf">Land cover</label>
         <select id="lcf">
@@ -312,6 +313,14 @@ tr.chosen td{font-weight:600}
         <div class="legend" id="legend"></div>
       </section>
 
+      <section aria-labelledby="h-trk" id="sec-trk">
+        <div class="sechead"><div><span class="eyebrow">Season tracker, early warning</span><h2 id="h-trk" style="margin-top:2px">Is this burning season running early or late?</h2>
+          <p>Hotspots added up day by day from 1 January to 31 May for the selected year, against the range of past years at the same date. Click a calendar cell to pick the year.</p></div></div>
+        <div class="keyrow" id="trk-key"></div>
+        <div class="chart" id="trk-chart"></div>
+        <div class="metric-line" id="trk-text"></div>
+      </section>
+
       <section aria-labelledby="h-lc" id="sec-lc">
         <div class="sechead"><div><span class="eyebrow">What burned, MODIS land cover</span><h2 id="h-lc" style="margin-top:2px">Which land cover the hotspots fell on</h2>
           <p>Each hotspot takes the MODIS land-cover class of its pixel in its own year (2001–2024; 2025 uses 2024). Click a type to filter the whole page to it.</p></div></div>
@@ -363,7 +372,7 @@ tr.chosen td{font-weight:600}
               <li><strong>Filter.</strong> Keep detections FIRMS flags as presumed vegetation fire (type 0). Drop low confidence (MODIS &lt; 30, VIIRS “low”). Static land sources such as brick kilns and gas flares (type 2) and offshore detections (type 3) are kept out of the counts but stay in the export.</li>
               <li><strong>Reference.</strong> VIIRS S-NPP 375 m is the reference series from February 2012. It sees smaller, cooler fires than MODIS at 1 km.</li>
               <li><strong>Convert MODIS.</strong> Each MODIS detection gets a weight: the S-NPP-to-MODIS ratio for its season and 0.5° cell during 2012–2021, pulled toward the season-wide ratio where data are thin. Before Aqua (to June 2002) a Terra-only ratio is used.</li>
-              <li><strong>Carry forward.</strong> S-NPP stopped delivering on 2 November 2026. NOAA-20 is linked to S-NPP the same way, so new months can join the series.</li>
+              <li><strong>Carry forward, live.</strong> 2026 detections come daily from NASA GIBS vector tiles of the FIRMS near-real-time feed, which needs no key. Each one is assigned to Bangladesh by comparing its distance to past Bangladeshi and neighbouring-country FIRMS detections; on held-out days this kept 99.2% of true Bangladesh detections, 98.5% of those kept were correct, and monthly counts came within 1% of the official file. Known kiln and flare sites are flagged as static sources. S-NPP stopped delivering on 2 November 2026, so from November the series uses NOAA-20, converted with the same estimator (2019–2025). Over January–October 2026 the converted NOAA-20 came to 94% of S-NPP (March 84%, April 96%), inside the 94–109% range of earlier years. NOAA-21 is linked on the 2026 overlap.</li>
               <li><strong>Context.</strong> Each hotspot is tagged with MODIS land cover (MCD12Q1, IGBP classes) for its year. Monthly rainfall, humidity, maximum temperature, topsoil wetness and aerosol optical depth come from NASA POWER (GPM IMERG-corrected precipitation and MERRA-2), averaged over the grid points that cover the area. Aerosol over Bangladesh is dominated by regional pollution, which rose while fires fell, so it is shown as air-quality context, not as a measure of smoke.</li>
               <li><strong>Uncertainty.</strong> Estimated months carry an 80% range from leave-one-year-out errors, which grows as counts shrink.</li>
             </ol>
@@ -381,7 +390,7 @@ tr.chosen td{font-weight:600}
   </div>
 
   <footer class="foot">
-    <span>Data: NASA FIRMS country yearly summaries, standard processing (MCD14ML C6.1; VNP14IMG and VJ114IMG v2), November 2000 to December 2025. NASA GIBS: MODIS MCD12Q1 land cover 2001–2024, Blue Marble, VIIRS Black Marble. NASA POWER monthly climate 2001–2025. Months from 2026 need near-real-time FIRMS data, which needs a FIRMS map key.</span>
+    <span>Data: NASA FIRMS country yearly summaries, standard processing (MCD14ML C6.1; VNP14IMG and VJ114IMG v2), November 2000 to December 2025, plus near-real-time VIIRS (S-NPP, NOAA-20, NOAA-21) for 2026 from NASA GIBS vector tiles, updated daily. NASA GIBS: MODIS MCD12Q1 land cover 2001–2024, Blue Marble, VIIRS Black Marble. NASA POWER monthly climate 2001–2025. Months from 2026 need near-real-time FIRMS data, which needs a FIRMS map key.</span>
     <span>Built for the 2026 NASA Space Apps Challenge, “Harmonization of MODIS and VIIRS Hot Spots”.</span>
   </footer>
 </div>
@@ -393,14 +402,15 @@ tr.chosen td{font-weight:600}
 const $=s=>document.querySelector(s);
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONL=['January','February','March','April','May','June','July','August','September','October','November','December'];
-const NY=26, NM=NY*12;                 // months 2000-01 .. 2025-12
+const NY=27, NM=NY*12;                 // months 2000-01 .. 2026-12
 const mi=(y,m)=>(y-2000)*12+(m-1);
 const yOf=i=>2000+Math.floor(i/12), mOf=i=>i%12+1;
-const FIRST=mi(2000,11), LAST=mi(2025,12), AQUA=mi(2002,7), SWITCH=mi(2012,2);
+const FIRST=mi(2000,11), AQUA=mi(2002,7), SWITCH=mi(2012,2), SNPP_END=mi(2026,11), SP_END=mi(2025,12);
+let LAST=mi(2025,12);
 const BBOX={s:20.4,w:87.8,n:26.8,e:93.0};
 const fmt=(v,d=0)=>v==null||isNaN(v)?'—':Number(v).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const era=i=>i<AQUA?0:(i<SWITCH?1:2);
+const era=i=>i<AQUA?0:(i<SWITCH?1:(i<SNPP_END?2:3));   // 0 Terra-only, 1 MODIS estimated, 2 S-NPP observed, 3 NOAA-20 linked
 
 // ---------- load data ----------
 let meta,buf;
@@ -412,12 +422,25 @@ try{
   const b64=(await br.text()).trim(); const bin=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
   buf=await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
 }catch(err){ $('#loading').textContent='The hotspot data could not be loaded ('+err.message+'). Reload the page to try again.'; return; }
-const N=meta.n, LAY=meta.layout;
-const A=(name,T)=>new T(buf,LAY[name].offset,N);
-const P={lat:A('lat',Float32Array),lon:A('lon',Float32Array),frp:A('frp',Float32Array),e:A('e',Float32Array),
-  day:A('day',Uint16Array),time:A('time',Uint16Array),src:A('src',Uint8Array),conf:A('conf',Uint8Array),type:A('type',Uint8Array),flags:A('flags',Uint8Array)};
-let CTX=null; try{ const r=await fetch('context.json'); if(r.ok) CTX=await r.json(); }catch(e){ CTX=null; }
-P.lc=LAY.lc?A('lc',Uint8Array):new Uint8Array(N);
+const N0=meta.n, LAY=meta.layout;
+const A=(name,T)=>new T(buf,LAY[name].offset,N0);
+const P0={lat:A('lat',Float32Array),lon:A('lon',Float32Array),frp:A('frp',Float32Array),e:A('e',Float32Array),
+  day:A('day',Uint16Array),time:A('time',Uint16Array),src:A('src',Uint8Array),conf:A('conf',Uint8Array),type:A('type',Uint8Array),flags:A('flags',Uint8Array),
+  lc:LAY.lc?A('lc',Uint8Array):new Uint8Array(N0)};
+const getJSON=async u=>{ try{ const r=await fetch(u); return r.ok?await r.json():null; }catch(e){ return null; } };
+const [CTX, LIVE, LIVEP]=await Promise.all([getJSON('context.json'),getJSON('live.json'),getJSON('live_power.json')]);
+// near-real-time VIIRS rows (2026 on) from NASA GIBS: [src,date,time,lat,lon,conf,frp,daynight,type,weight,landcover]
+const LR=(LIVE&&LIVE.rows)||[]; const N=N0+LR.length;
+const P={}; for(const [k,a] of Object.entries(P0)){ const b=new a.constructor(N); b.set(a); P[k]=b; }
+{ const SC={VS:2,V1:3,V2:4}, CF={l:201,n:202,h:203}, t0=Date.UTC(2000,0,1);
+  LR.forEach((r,j)=>{ const k=N0+j, ds=String(r[1]); P.lat[k]=r[3]; P.lon[k]=r[4]; P.frp[k]=r[6]; P.e[k]=r[9];
+    P.day[k]=Math.round((Date.UTC(+ds.slice(0,4),+ds.slice(4,6)-1,+ds.slice(6,8))-t0)/864e5); P.time[k]=+r[2]; P.src[k]=SC[r[0]]??2; P.conf[k]=CF[r[5]]||202;
+    P.type[k]=r[8]; P.flags[k]=(r[7]==='N'?1:0)|((r[5]!=='l'&&r[8]===0)?2:0); P.lc[k]=r[10]; }); }
+const LIVE_DAY=LR.length?String(LIVE.last_day||LR[LR.length-1][1]):null;
+if(CTX&&LIVEP&&LIVEP.params){ for(const [k,Pm] of Object.entries(CTX.params)){ const lp=LIVEP.params[k]; if(!lp) continue;
+    const byPt=new Map(lp.map(q=>[q.lat.toFixed(3)+','+q.lon.toFixed(3),q.m]));
+    for(const pt of Pm.points){ const mm=byPt.get(pt.lat.toFixed(3)+','+pt.lon.toFixed(3)); if(!mm) continue;
+      for(const [ym,[v,n]] of Object.entries(mm)){ const y=+ym.slice(0,4), m=+ym.slice(4,6); if(n<new Date(Date.UTC(y,m,0)).getUTCDate()) continue; const t=(y-2001)*12+m-1; while(pt.v.length<t) pt.v.push(null); pt.v[t]=v; } } } }
 // land-cover groups: 0 crop, 1 forest, 2 built, 3 shrub/savanna/grass, 4 wetland/water, 5 other
 const LCG=new Uint8Array(256).fill(5); { const G=(meta.landcover||{}).groups||{}; const ord={crop:0,forest:1,built:2,shrub:3,wet:4,other:5};
   for(const [k,cs] of Object.entries(G)) for(const c of cs) LCG[c]=ord[k]; }
@@ -425,12 +448,17 @@ const LCN=['Cropland & mosaic','Forest','Built-up','Shrub, savanna & grass','Wet
 const LCC=['#eda100','#008300','#6250d6','#eb6834','#2a78d6','#9aa0a3'];
 const IGBP={0:'No data',1:'Evergreen needleleaf forest',2:'Evergreen broadleaf forest',3:'Deciduous needleleaf forest',4:'Deciduous broadleaf forest',5:'Mixed forest',6:'Closed shrubland',7:'Open shrubland',8:'Woody savanna',9:'Savanna',10:'Grassland',11:'Permanent wetland',12:'Cropland',13:'Urban and built-up',14:'Cropland/natural vegetation mosaic',15:'Snow and ice',16:'Barren',17:'Water',254:'Unmatched',255:'Unclassified'};
 // month index per point, series weight per point
-const dayMi=new Uint16Array(9800); { const t0=Date.UTC(2000,0,1); for(let d=0;d<9800;d++){const dt=new Date(t0+d*864e5); dayMi[d]=(dt.getUTCFullYear()-2000)*12+dt.getUTCMonth();} }
-P.mi=new Uint16Array(N); P.w=new Float32Array(N);
-for(let k=0;k<N;k++){const m=dayMi[P.day[k]]; P.mi[k]=m; const inc=P.flags[k]&2, s=P.src[k];
-  if(inc && ((s<=1&&m<SWITCH)||(s===2&&m>=SWITCH))) P.w[k]=P.e[k]; }
+const NDAYS=11000;
+const dayMi=new Uint16Array(NDAYS); { const t0=Date.UTC(2000,0,1); for(let d=0;d<NDAYS;d++){const dt=new Date(t0+d*864e5); dayMi[d]=(dt.getUTCFullYear()-2000)*12+dt.getUTCMonth();} }
+P.mi=new Uint16Array(N); P.w=new Float32Array(N); P.sd=new Uint8Array(N).fill(255);  // sd: day of the Jan-May season (0-150), 255 outside
+const SEASON_D=151;
+const dayOfYear=new Int16Array(NDAYS); { const t0=Date.UTC(2000,0,1); for(let d=0;d<NDAYS;d++){ const dt=new Date(t0+d*864e5); dayOfYear[d]=Math.round((Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth(),dt.getUTCDate())-Date.UTC(dt.getUTCFullYear(),0,1))/864e5); } }
+for(let k=0;k<N;k++){const m=dayMi[P.day[k]]; P.mi[k]=m; { const mm=m%12; if(mm<=4){ const yy=Math.floor(m/12)+2000, leap=(yy%4===0)?1:0; let dd=dayOfYear[P.day[k]]; if(leap&&dd>=59) dd--; if(dd<SEASON_D) P.sd[k]=dd; } } const inc=P.flags[k]&2, s=P.src[k];
+  if(inc && ((s<=1&&m<SWITCH)||(s===2&&m>=SWITCH&&m<SNPP_END)||(s===3&&m>=SNPP_END))) P.w[k]=P.e[k];
+  if(m>LAST) LAST=m; }
 
 // ---------- state ----------
+{ const ymS=i=>`${yOf(i)}-${String(mOf(i)).padStart(2,'0')}`; for(const id of ['from','to']) document.getElementById(id).max=ymS(LAST); document.getElementById('to').value=ymS(LAST); }
 const S={lcf:-1,driver:'rain4',clim:null,aoi:{type:'all'},series:'harm',from:mi(2001,1),to:LAST,target:null,baseline:[2003,2025],mode:'count',agg:null};
 
 // ---------- uncertainty ----------
@@ -462,14 +490,14 @@ function aoiArea(a){
 // ---------- aggregation ----------
 function aggregate(){
   const t=aoiTest(S.aoi); const g={H:new Float64Array(NM),MT:new Float64Array(NM),MA:new Float64Array(NM),VS:new Float64Array(NM),V1:new Float64Array(NM),
-    ME:new Float64Array(NM),NE:new Float64Array(NM),ST:new Float64Array(NM),G:[0,1,2,3,4,5].map(()=>new Float64Array(NM)),idx:[]};
+    ME:new Float64Array(NM),NE:new Float64Array(NM),V2:new Float64Array(NM),ST:new Float64Array(NM),G:[0,1,2,3,4,5].map(()=>new Float64Array(NM)),SD:new Float64Array(NY*SEASON_D),idx:[]};
   for(let k=0;k<N;k++){ if(t&&!t(k)) continue; g.idx.push(k); const m=P.mi[k];
     if(P.type[k]===2){g.ST[m]++; continue;}
     if(!(P.flags[k]&2)) continue;
     const lg=LCG[P.lc[k]]; g.G[lg][m]+=P.w[k];
     if(S.lcf>=0&&lg!==S.lcf) continue;
-    g.H[m]+=P.w[k]; const s=P.src[k];
-    if(s===0){g.MT[m]++;g.ME[m]+=P.e[k];} else if(s===1){g.MA[m]++;g.ME[m]+=P.e[k];} else if(s===2) g.VS[m]++; else {g.V1[m]++; g.NE[m]+=P.e[k];}
+    g.H[m]+=P.w[k]; if(P.sd[k]!==255&&P.w[k]>0) g.SD[Math.floor(m/12)*SEASON_D+P.sd[k]]+=P.w[k]; const s=P.src[k];
+    if(s===0){g.MT[m]++;g.ME[m]+=P.e[k];} else if(s===1){g.MA[m]++;g.ME[m]+=P.e[k];} else if(s===2) g.VS[m]++; else if(s===4) g.V2[m]++; else {g.V1[m]++; g.NE[m]+=P.e[k];}
   }
   g.idx=Uint32Array.from(g.idx); S.agg=g; S.clim=climSel();
 }
@@ -504,17 +532,27 @@ function permP(x,y,rho){ if(isNaN(rho)) return NaN; let seed=12345; const rnd=()
   const rx=ranks(x), ry=ranks(y); let c=0; const T=2000;
   for(let t=0;t<T;t++){ const sh=[...ry]; for(let i=sh.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [sh[i],sh[j]]=[sh[j],sh[i]]; } if(Math.abs(pearson(rx,sh))>=Math.abs(rho)-1e-12) c++; }
   return (c+1)/(T+1); }
-function avail(i){ if(i<FIRST||i>LAST) return false;
+function avail(i){ if(i<FIRST||i>LAST) return false; if(S.series==='n21') return i>=mi(2026,1); if(S.series==='snpp'&&i>=SNPP_END) return false;
   if(S.series==='snpp') return i>=mi(2012,1); if(S.series==='n20') return i>=mi(2018,4); return true; }
-function val(i){const g=S.agg; switch(S.series){case 'harm':return g.H[i];case 'modis':return g.MT[i]+g.MA[i];case 'snpp':return g.VS[i];default:return g.V1[i];}}
+function val(i){const g=S.agg; switch(S.series){case 'harm':return g.H[i];case 'modis':return g.MT[i]+g.MA[i];case 'snpp':return g.VS[i];case 'n21':return g.V2[i];default:return g.V1[i];}}
 function isEst(i){return S.series==='harm'&&era(i)<2;}
-function seriesLabel(){return (S.lcf>=0?LCN[S.lcf].toLowerCase()+' ':'')+{harm:'VIIRS-equivalent hotspots',modis:'MODIS detections',snpp:'VIIRS S-NPP detections',n20:'VIIRS NOAA-20 detections'}[S.series];}
+function seriesLabel(){return (S.lcf>=0?LCN[S.lcf].toLowerCase()+' ':'')+{harm:'VIIRS-equivalent hotspots',modis:'MODIS detections',snpp:'VIIRS S-NPP detections',n20:'VIIRS NOAA-20 detections',n21:'VIIRS NOAA-21 detections'}[S.series];}
 function lcLabel(){ return S.lcf>=0?LCN[S.lcf]:'All land cover'; }
 
+// month in progress: compare with the same days of the month in past years
+const PARTIAL=(()=>{ if(!LIVE_DAY) return null; const y=+LIVE_DAY.slice(0,4), m=+LIVE_DAY.slice(4,6), d=+LIVE_DAY.slice(6,8); const dim=new Date(Date.UTC(y,m,0)).getUTCDate();
+  return d<dim?{i:mi(y,m),d}:null; })();
+function partialVals(){ // value per year for days 1..PARTIAL.d of the in-progress month, current filters
+  const key=[S.series,S.lcf].join('|'); if(S.agg.pv&&S.agg.pvKey===key) return S.agg.pv; const out=new Map(), m=mOf(PARTIAL.i), idx=S.agg.idx, t0=Date.UTC(2000,0,1);
+  for(let j=0;j<idx.length;j++){ const k=idx[j], mm=P.mi[k]; if(mm%12!==m-1) continue; if(P.type[k]!==0||!(P.flags[k]&2)) continue; if(S.lcf>=0&&LCG[P.lc[k]]!==S.lcf) continue;
+    const dd=new Date(t0+P.day[k]*864e5).getUTCDate(); if(dd>PARTIAL.d) continue; const s=P.src[k]; let v=0;
+    if(S.series==='harm') v=P.w[k]; else if(S.series==='modis') v=s<=1?1:0; else if(S.series==='snpp') v=s===2?1:0; else if(S.series==='n21') v=s===4?1:0; else v=s===3?1:0;
+    if(v) out.set(mm,(out.get(mm)||0)+v); }
+  S.agg.pv=out; S.agg.pvKey=key; return out; }
 // baseline: same calendar month, baseline years, excluding the target year and Terra-only months
-function baselineVals(i){ const m=mOf(i), out=[];
+function baselineVals(i){ const m=mOf(i), out=[]; const part=PARTIAL&&i===PARTIAL.i?partialVals():null;
   for(let y=S.baseline[0];y<=S.baseline[1];y++){const j=mi(y,m); if(j===i||!avail(j)) continue; if(S.series==='harm'&&era(j)===0) continue;
-    if(S.series==='n20'&&y===2018) continue; if(S.series==='snpp'&&j<mi(2012,2)) continue; out.push({y,v:val(j)});}
+    if(S.series==='n20'&&y===2018) continue; if(S.series==='snpp'&&j<mi(2012,2)) continue; out.push({y,v:part?(part.get(j)||0):val(j)});}
   return out; }
 function quant(a,q){ if(!a.length) return NaN; const s=[...a].sort((x,y)=>x-y); const p=(s.length-1)*q, lo=Math.floor(p), hi=Math.ceil(p); return s[lo]+(s[hi]-s[lo])*(p-lo); }
 function pctRank(v,arr){ if(!arr.length) return NaN; let lt=0,eq=0; for(const x of arr){ if(x<v-1e-9) lt++; else if(Math.abs(x-v)<=1e-9) eq++; } return (lt+0.5*eq)/arr.length; }
@@ -559,7 +597,7 @@ const FireLayer=L.Layer.extend({
       for(let j=0;j<idx.length;j++){const k=idx[j], i=P.mi[k]; if(i<S.from||i>S.to||P.type[k]!==0||!(P.flags[k]&2)) continue;
         const s=P.src[k]; let on;
         if(S.lcf>=0&&LCG[P.lc[k]]!==S.lcf) continue;
-        if(S.series==='harm') on=P.w[k]>0; else if(S.series==='modis') on=s<=1; else if(S.series==='snpp') on=s===2; else on=s===3;
+        if(S.series==='harm') on=P.w[k]>0; else if(S.series==='modis') on=s<=1; else if(S.series==='snpp') on=s===2; else if(S.series==='n21') on=s===4; else on=s===3;
         if(!on) continue; const px=ax*P.lon[k]+bx, py=ay*P.lat[k]+by; if(px<-4||py<-4||px>sz.x+4||py>sz.y+4) continue; pick.push(px,py);}
       // fade dots as more are drawn, so dense areas keep some texture
       const alpha=Math.max(0.07,Math.min(0.7,2500/Math.max(1,pick.length/2))); x.fillStyle=`rgba(${css('--dot')},${alpha.toFixed(3)})`;
@@ -629,15 +667,15 @@ $('#bm').onchange=setBase; $('#l-borders').onchange=setBase; $('#l-fires').oncha
 
 // ---------- controls ----------
 function parseMonth(v){ const [y,m]=v.split('-').map(Number); return mi(y,m); }
-function onRange(){ let f=parseMonth($('#from').value||'2001-01'), t=parseMonth($('#to').value||'2025-12'); f=Math.max(FIRST,Math.min(LAST,f)); t=Math.max(FIRST,Math.min(LAST,t)); if(f>t){const x=f;f=t;t=x;}
+function onRange(){ let f=parseMonth($('#from').value||'2001-01'), t=parseMonth($('#to').value||`${yOf(LAST)}-${String(mOf(LAST)).padStart(2,'0')}`); f=Math.max(FIRST,Math.min(LAST,f)); t=Math.max(FIRST,Math.min(LAST,t)); if(f>t){const x=f;f=t;t=x;}
   S.from=f; S.to=t; if(S.target<f||S.target>t) S.target=null; refresh(false); }
 $('#from').onchange=onRange; $('#to').onchange=onRange;
 $('#series').onchange=e=>{ S.series=e.target.value; refresh(false); };
-$('#baseline').onchange=e=>{ S.baseline=e.target.value.split('-').map(Number); renderCalendar(); renderReadout(); renderDrivers(); };
+$('#baseline').onchange=e=>{ S.baseline=e.target.value.split('-').map(Number); renderCalendar(); renderReadout(); renderDrivers(); renderTracker(); };
 $('#m-count').onclick=()=>{S.mode='count';$('#m-count').setAttribute('aria-pressed','true');$('#m-anom').setAttribute('aria-pressed','false');renderCalendar();};
 $('#m-anom').onclick=()=>{S.mode='anom';$('#m-anom').setAttribute('aria-pressed','true');$('#m-count').setAttribute('aria-pressed','false');renderCalendar();};
 $('#prev').onclick=()=>step(-1); $('#next').onclick=()=>step(1);
-function step(d){ let i=S.target+d; while(i>=S.from&&i<=S.to&&!avail(i)) i+=d; if(i>=S.from&&i<=S.to){S.target=i; renderReadout(); markSel(); renderDrivers();} }
+function step(d){ let i=S.target+d; while(i>=S.from&&i<=S.to&&!avail(i)) i+=d; if(i>=S.from&&i<=S.to){S.target=i; renderReadout(); markSel(); renderDrivers(); renderTracker();} }
 
 // ---------- tooltip ----------
 const tip=$('#tip');
@@ -649,7 +687,8 @@ function cellTip(i){ const g=S.agg, v=val(i), e=era(i); let h=`<div class="t">${
   if(!avail(i)) return h+'<div class="muted">No data from this sensor for this month.</div>';
   h+=row(seriesLabel(), (isEst(i)?'≈':'')+fmt(v));
   if(isEst(i)){ const [lo,hi]=band(v,e); h+=row('80% range',`${fmt(lo)}–${fmt(hi)}`); h+=row('From MODIS',`${fmt(g.MA[i])} Aqua · ${fmt(g.MT[i])} Terra`); h+=`<div class="muted" style="margin-top:3px">${e===0?'Terra-only period: low confidence, left out of baselines.':'Estimated from MODIS.'}</div>`; }
-  else { h+=row('MODIS raw',fmt(g.MA[i]+g.MT[i])); h+=row('S-NPP raw',i>=mi(2012,1)?fmt(g.VS[i]):'—'); h+=row('NOAA-20 raw',i>=mi(2018,4)?fmt(g.V1[i]):'—'); }
+  else { h+=row('MODIS raw',i<=SP_END?fmt(g.MA[i]+g.MT[i]):'—'); h+=row('S-NPP raw',i>=mi(2012,1)&&i<SNPP_END?fmt(g.VS[i]):'—'); h+=row('NOAA-20 raw',i>=mi(2018,4)?fmt(g.V1[i]):'—'); if(i>=mi(2026,1)) h+=row('NOAA-21 raw',fmt(g.V2[i]));
+    if(i>SP_END) h+=`<div class="muted" style="margin-top:3px">${era(i)===3?'NOAA-20, converted to S-NPP equivalents (S-NPP ended 2 Nov 2026). ':''}Near-real-time data from NASA GIBS; FIRMS replaces it with standard processing a few months later.${i===LAST?' Month in progress.':''}</div>`; }
   if(g.ST[i]) h+=row('Static sources',fmt(g.ST[i]));
   const b=baselineVals(i).map(o=>o.v); if(b.length&&!(S.series==='harm'&&e===0)){ const p=pctRank(v,b), c=classOf(p); h+=`<div class="r" style="margin-top:4px"><span>vs ${MON[mOf(i)-1]} median ${fmt(quant(b,.5))}</span><span>${CLASSES[c].lab}</span></div>`; }
   return h; }
@@ -672,6 +711,7 @@ function renderCalendar(){
   for(const T of tots){ const y=T.y;
     const yl=document.createElement('div'); yl.className='yr'; yl.textContent=y; cal.appendChild(yl);
     const er=document.createElement('div'); const e0=era(mi(y,6)); const eLab=S.series!=='harm'?2:(y<=2002?0:y<=2011?1:2);
+    if(y>yOf(SP_END)) er.style.opacity='.55';
     er.className='era era-'+eLab; er.title=eLab===0?'Terra-only, low confidence':eLab===1?'Estimated from MODIS':'Observed'; cal.appendChild(er);
     for(let m=1;m<=12;m++){ const i=mi(y,m); const b=document.createElement('button'); b.className='cell'; b.type='button';
       if(!avail(i)){ b.classList.add('na'); b.disabled=true; b.setAttribute('aria-label',`${MONL[m-1]} ${y}: no data`); }
@@ -681,7 +721,7 @@ function renderCalendar(){
         if(S.series==='harm'&&era(i)===0) b.classList.add('t0');
         b.setAttribute('aria-label',`${MONL[m-1]} ${y}: ${isEst(i)?'about ':''}${fmt(v)} ${seriesLabel()}`);
         b.onmousemove=ev=>showTip(cellTip(i),ev); b.onmouseleave=hideTip;
-        b.onclick=()=>{ S.target=i; renderReadout(); markSel(); renderDrivers(); };
+        b.onclick=()=>{ S.target=i; renderReadout(); markSel(); renderDrivers(); renderTracker(); };
       }
       if(i<S.from||i>S.to) b.classList.add('out');
       cal.appendChild(b); cellEls.set(i,b); }
@@ -715,7 +755,7 @@ function renderReadout(){
   if(S.target==null||!avail(S.target)){ // default: the latest April (peak fire month) in range, else the latest month
     let i=S.to; while(i>=S.from&&!(avail(i)&&mOf(i)===4)) i--; if(i<S.from){ i=S.to; while(i>=S.from&&!avail(i)) i--; } S.target=i; }
   const i=S.target, v=val(i), e=era(i);
-  $('#ro-title').textContent=`${MON[mOf(i)-1]} ${yOf(i)}`;
+  $('#ro-title').textContent=PARTIAL&&i===PARTIAL.i?`1–${PARTIAL.d} ${MON[mOf(i)-1]} ${yOf(i)}`:`${MON[mOf(i)-1]} ${yOf(i)}`;
   $('#prev').disabled=i<=S.from; $('#next').disabled=i>=S.to;
   const est=isEst(i); const [lo,hi]=band(v,e);
   $('#ro-value').innerHTML=`${est?'≈':''}${fmt(v)} <small>${seriesLabel()}</small>`;
@@ -726,11 +766,11 @@ function renderReadout(){
   else $('#ro-pill').innerHTML=`<span class="pill" style="border-color:var(--rule-strong)">${terraOnly?'Low confidence, not ranked':'No baseline'}</span>`;
   const med=quant(bv,.5), p10=quant(bv,.1), p90=quant(bv,.9);
   let kv=''; if(est) kv+=`<dt>80% range</dt><dd>${fmt(lo)}–${fmt(hi)}</dd>`;
-  kv+=`<dt>${MON[mOf(i)-1]} median</dt><dd>${fmt(med)}</dd><dt>Typical range</dt><dd>${fmt(p10)}–${fmt(p90)} <span class="muted">(P10–P90)</span></dd>`;
+  kv+=`<dt>${PARTIAL&&i===PARTIAL.i?'Median, same days':MON[mOf(i)-1]+' median'}</dt><dd>${fmt(med)}</dd><dt>Typical range</dt><dd>${fmt(p10)}–${fmt(p90)} <span class="muted">(P10–P90)</span></dd>`;
   if(!isNaN(p)) kv+=`<dt>Rank</dt><dd>higher than ${bv.filter(x=>x<v-1e-9).length} of ${bv.length} baseline years</dd>`;
-  kv+=`<dt>Source</dt><dd style="font-family:var(--f-body)">${S.series!=='harm'?'Raw sensor counts':e===0?'MODIS Terra only, converted':e===1?'MODIS Terra + Aqua, converted':'VIIRS S-NPP, observed'}</dd>`;
+  kv+=`<dt>Source</dt><dd style="font-family:var(--f-body)">${S.series!=='harm'?'Raw sensor counts':e===0?'MODIS Terra only, converted':e===1?'MODIS Terra + Aqua, converted':e===3?'VIIRS NOAA-20, converted (S-NPP ended)':i>SP_END?'VIIRS S-NPP, near-real-time':'VIIRS S-NPP, observed'}${i===LAST?' · month in progress':''}</dd>`;
   $('#ro-kv').innerHTML=kv; renderWeather(i);
-  $('#strip-title').textContent=`${MONL[mOf(i)-1]}s, ${S.baseline[0]}–${S.baseline[1]}`;
+  $('#strip-title').textContent=PARTIAL&&i===PARTIAL.i?`1–${PARTIAL.d} ${MONL[mOf(i)-1]}, ${S.baseline[0]}–${S.baseline[1]}`:`${MONL[mOf(i)-1]}s, ${S.baseline[0]}–${S.baseline[1]}`;
   renderStrip(bl,v,i);
 }
 function renderStrip(bl,v,i){
@@ -758,7 +798,7 @@ function niceTicks(a,b,n){ const span=b-a; if(span<=0) return [a]; const st=Math
 
 // ---------- harmonization check chart ----------
 function renderCheck(){
-  const g=S.agg, years=[]; for(let y=2012;y<=2025;y++) years.push(y);
+  const g=S.agg, years=[]; for(let y=2012;y<=2025;y++) years.push(y);   // complete standard-processing years
   const sum=(arr,y)=>{let s=0; for(let m=(y===2012?2:1);m<=12;m++) s+=arr[mi(y,m)]; return s;};
   const obs=years.map(y=>sum(g.VS,y)), mod=years.map(y=>sum(g.ME,y)), n20=years.map(y=>y>=2019?sum(g.NE,y):null);
   const el=$('#check'); const W=Math.max(300,el.clientWidth||600), H=Math.round(Math.min(280,Math.max(200,W*0.38))), ml=48, mr=14, mt=14, mb=28;
@@ -832,6 +872,47 @@ function renderLC(){
   el.querySelectorAll('.hov').forEach(r=>{ const j=+r.dataset.j; r.onmousemove=ev=>showTip(`<div class="t">${years[j]}${years[j]<=2002?' · Terra-only, low confidence':''}</div>`+order.filter(q=>per[j][q]>=0.5).map(q=>row(`<i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${LCC[q]};margin-right:6px"></i>${LCN[q]}`,fmt(per[j][q]))).join('')+row('<b>Total</b>',fmt(sums[j])),ev); r.onmouseleave=hideTip; });
 }
 function setLCF(q){ S.lcf=q; $('#lcf').value=String(q); refresh(true); }
+// ---------- season tracker ----------
+function lastDataDay(){ let last=0; for(let k=N-1;k>=0;k--){ if(P.w[k]>0){ last=P.day[k]; break; } } return last; }
+const LAST_DAY=lastDataDay();
+function renderTracker(){
+  const g=S.agg, Y=yOf(S.target), el=$('#trk-chart');
+  const cum=y=>{ const out=new Float64Array(SEASON_D); let s=0; const base=(y-2000)*SEASON_D; for(let d=0;d<SEASON_D;d++){ s+=g.SD[base+d]||0; out[d]=s; } return out; };
+  const t0=Date.UTC(2000,0,1), lastDate=new Date(t0+LAST_DAY*864e5), lastY=lastDate.getUTCFullYear();
+  let endD=SEASON_D-1; if(Y===lastY){ const leap=Y%4===0?1:0; let dd=Math.round((Date.UTC(Y,lastDate.getUTCMonth(),lastDate.getUTCDate())-Date.UTC(Y,0,1))/864e5); if(leap&&dd>=59) dd--; endD=Math.min(SEASON_D-1,dd); }
+  const yrs=[]; for(let y=Math.max(S.baseline[0],2003);y<=Math.min(S.baseline[1],2025);y++){ if(y===Y) continue; yrs.push(y); }
+  const curves=yrs.map(cum), tgt=cum(Y);
+  const P10=[],P50=[],P90=[]; for(let d=0;d<SEASON_D;d++){ const v=curves.map(c=>c[d]); P10.push(quant(v,.1)); P50.push(quant(v,.5)); P90.push(quant(v,.9)); }
+  const W=Math.max(300,el.clientWidth||600), H=Math.round(Math.min(280,Math.max(200,W*0.36))), ml=52, mr=14, mt=12, mb=28;
+  const maxv=Math.max(1,P90[SEASON_D-1],tgt[endD])*1.06; const x=d=>ml+(W-ml-mr)*(d/(SEASON_D-1)), y=v=>mt+(H-mt-mb)*(1-v/maxv);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Cumulative hotspots January to May">`;
+  for(const t of niceTicks(0,maxv,4)) s+=`<line x1="${ml}" x2="${W-mr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--rule)"/><text x="${ml-6}" y="${y(t)+4}" text-anchor="end">${t>=1000?fmt(t/1000,t%1000?1:0)+'k':fmt(t)}</text>`;
+  const mstart=[0,31,59,90,120]; ['Jan','Feb','Mar','Apr','May'].forEach((m,j)=>{ s+=`<line x1="${x(mstart[j])}" x2="${x(mstart[j])}" y1="${H-mb}" y2="${H-mb+4}" stroke="var(--rule-strong)"/><text x="${x(mstart[j]+14)}" y="${H-8}" text-anchor="middle">${m}</text>`; });
+  let band='M'; for(let d=0;d<SEASON_D;d++) band+=(d?'L':'')+x(d).toFixed(1)+' '+y(P90[d]).toFixed(1); for(let d=SEASON_D-1;d>=0;d--) band+='L'+x(d).toFixed(1)+' '+y(P10[d]).toFixed(1); band+='Z';
+  s+=`<path d="${band}" fill="var(--rule)" opacity=".8"/>`;
+  const line=(arr,to,col,w,dash)=>{ let dd=''; for(let d=0;d<=to;d++) dd+=(d?'L':'M')+x(d).toFixed(1)+' '+y(arr[d]).toFixed(1); return `<path d="${dd}" fill="none" stroke="${col}" stroke-width="${w}" ${dash?`stroke-dasharray="${dash}"`:''} stroke-linejoin="round"/>`; };
+  s+=line(P50,SEASON_D-1,'var(--muted)',1.5,'4 3');
+  s+=line(tgt,endD,'var(--accent)',2.5);
+  s+=`<circle cx="${x(endD)}" cy="${y(tgt[endD])}" r="4" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>`;
+  if(endD<SEASON_D-1) s+=`<line x1="${x(endD)}" x2="${x(endD)}" y1="${mt}" y2="${H-mb}" stroke="var(--accent)" stroke-dasharray="2 3" opacity=".7"/>`;
+  s+=`<rect class="hov" x="${ml}" y="${mt}" width="${W-ml-mr}" height="${H-mt-mb}" fill="transparent"/></svg>`;
+  el.innerHTML=s;
+  const dateOf=d=>{ const dt=new Date(Date.UTC(2001,0,1+d)); return dt.getUTCDate()+' '+MON[dt.getUTCMonth()]; };
+  el.querySelector('.hov').onmousemove=ev=>{ const r=ev.target.getBoundingClientRect(); const d=Math.max(0,Math.min(SEASON_D-1,Math.round((ev.clientX-r.left)/r.width*(SEASON_D-1))));
+    showTip(`<div class="t">${dateOf(d)}</div>${row(String(Y),d<=endD?fmt(tgt[d]):'—')}${row('Median, past years',fmt(P50[d]))}${row('Typical range',fmt(P10[d])+'–'+fmt(P90[d]))}`,ev); };
+  el.querySelector('.hov').onmouseleave=hideTip;
+  $('#trk-key').innerHTML=`<span><i style="background:var(--accent);height:3px"></i>${Y}</span><span><i style="background:repeating-linear-gradient(90deg,var(--muted) 0 4px,transparent 4px 7px)"></i>Median of ${yrs[0]}–${yrs[yrs.length-1]}</span><span><i style="background:var(--rule);height:10px"></i>P10–P90 of past years</span>`;
+  // text: position at the end date, and the rain timing signal
+  const at=tgt[endD], vals=curves.map(c=>c[endD]), pr=pctRank(at,vals), cls=classOf(pr);
+  let txt=`By ${dateOf(endD)} ${Y}, this area had <span class="num">${fmt(at)}</span> hotspots: ${cls==null?'no comparison available':CLASSES[cls].lab.toLowerCase()} for that date (median <span class="num">${fmt(P50[endD])}</span>).`;
+  if(S.clim){ const rainJFM=yy=>{ let t=0; for(const m of [1,2,3]){ const v=climVal('PRECTOTCORR',mi(yy,m)); if(isNaN(v)) return NaN; t+=v; } return t; };
+    const rows=yrs.map(yy=>({r:rainJFM(yy),m:(S.agg.H[mi(yy,3)]||0),a:(S.agg.H[mi(yy,4)]||0)})).filter(o=>!isNaN(o.r)&&o.m+o.a>20);
+    if(rows.length>=8){ const rho=spearman(rows.map(o=>o.r),rows.map(o=>o.m/(o.m+o.a))); const med=quant(rows.map(o=>o.r),.5);
+      const wet=rows.filter(o=>o.r>med), dry=rows.filter(o=>o.r<=med); const share=a=>a.reduce((t,o)=>t+o.a/(o.m+o.a),0)/a.length;
+      const ry=rainJFM(Y); const now=isNaN(ry)?'':` ${Y} January–March rain: <span class="num">${fmt(ry)}</span> mm against a median of <span class="num">${fmt(med)}</span> mm.`;
+      txt+=` <br>Timing signal: in past years with a wetter January–March, ${fmt(share(wet)*100)}% of the March–April burning came in April, against ${fmt(share(dry)*100)}% after a drier start (Spearman ρ ${rho>=0?'+':'−'}${fmt(Math.abs(rho),2)} between that rain and March's share).${now} Early counts do not predict the season total: burning shifts in time more than it grows.`; } }
+  $('#trk-text').innerHTML=txt;
+}
 // ---------- weather drivers scatter ----------
 function renderDrivers(){
   const sec=$('#sec-drv'); if(!S.clim){ sec.hidden=true; return; } sec.hidden=false;
@@ -889,13 +970,13 @@ $('#x-cal').onclick=()=>{ const g=S.agg; const lines=['year,month,harmonized_snp
 function refresh(reagg){ if(reagg||!S.agg) aggregate();
   $('#exp-sub').textContent=`Files cover ${$('#aoi-name').textContent.toLowerCase()} from ${MON[mOf(S.from)-1]} ${yOf(S.from)} to ${MON[mOf(S.to)-1]} ${yOf(S.to)}. ${fmt(S.agg.idx.length)} detections in this area across all years.`;
   $('#exp-sub').textContent+=S.lcf>=0?` Filtered to ${LCN[S.lcf].toLowerCase()}.`:'';
-  renderCalendar(); renderReadout(); renderLC(); renderDrivers(); renderCheck(); fireLayer.redraw(); }
-let rt; window.addEventListener('resize',()=>{clearTimeout(rt); rt=setTimeout(()=>{renderCheck(); renderReadout(); renderLC(); renderDrivers();},150);});
+  renderCalendar(); renderReadout(); renderTracker(); renderLC(); renderDrivers(); renderCheck(); fireLayer.redraw(); }
+let rt; window.addEventListener('resize',()=>{clearTimeout(rt); rt=setTimeout(()=>{renderCheck(); renderReadout(); renderTracker(); renderLC(); renderDrivers();},150);});
 const mq=matchMedia('(prefers-color-scheme: dark)'); const rerender=()=>{ renderCalendar(); renderCheck(); renderReadout(); fireLayer.redraw(); if(aoiShape) aoiShape.setStyle(shapeStyle()); };
 mq.addEventListener&&mq.addEventListener('change',rerender); new MutationObserver(rerender).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
 renderMethod(); refresh(true); $('#loading').remove();
-window.__agun={S,P,meta,CTX};   // for checking in the console
+window.__agun={S,P,meta,CTX,LIVE_DAY,get LAST(){return LAST;}};   // for checking in the console
 })();
 </script>
 </body></html>
