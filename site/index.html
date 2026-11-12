@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><title>FireBridge</title><meta name="description" content="Harmonized MODIS + VIIRS burning-activity calendar for Bangladesh, built on NASA FIRMS hotspots."><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="en"><head><title>FireBridge</title><meta name="description" content="Harmonized MODIS + VIIRS burning-activity calendar for Bangladesh, built on NASA FIRMS hotspots, MODIS land cover and NASA POWER weather."><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -151,6 +151,17 @@ th{font-family:var(--f-mono);font-weight:500;font-size:11px;letter-spacing:.04em
 td{font-family:var(--f-mono)}
 td:first-child{font-family:var(--f-body)}
 tr.chosen td{font-weight:600}
+.wx{margin-top:12px;border-top:1px solid var(--rule);padding-top:10px}
+.wx table td,.wx table th{padding:4px 6px}
+.wx .dn{color:var(--d1)} .wx .up{color:var(--d5)}
+.lcchips{display:flex;flex-wrap:wrap;gap:6px 8px;margin-bottom:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rule-strong);background:var(--panel);border-radius:999px;padding:3px 10px 3px 7px;font-size:12.5px;cursor:pointer;min-height:28px}
+.chip i{width:11px;height:11px;border-radius:2px;display:inline-block}
+.chip[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.chip .pct{font-family:var(--f-mono);color:var(--muted);font-size:11.5px}
+.drv{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;margin-bottom:6px}
+.stat{font-family:var(--f-mono);font-size:13px}
+.stat b{font-size:20px;font-weight:500;color:var(--ink)}
 .foot{margin-top:28px;padding-top:12px;border-top:1px solid var(--rule);font-size:12px;color:var(--faint);display:flex;flex-direction:column;gap:4px}
 
 /* tooltip */
@@ -203,6 +214,15 @@ tr.chosen td{font-weight:600}
           <option value="modis">MODIS Terra + Aqua, raw</option>
           <option value="snpp">VIIRS S-NPP, raw</option>
           <option value="n20">VIIRS NOAA-20, raw</option>
+        </select></div>
+      <div class="field"><label for="lcf">Land cover</label>
+        <select id="lcf">
+          <option value="-1">All land cover</option>
+          <option value="0">Cropland &amp; mosaic</option>
+          <option value="1">Forest</option>
+          <option value="3">Shrub, savanna &amp; grass</option>
+          <option value="2">Built-up</option>
+          <option value="4">Wetland &amp; water</option>
         </select></div>
       <div class="field"><label for="from">From</label><input type="month" id="from" min="2000-11" max="2025-12" value="2001-01"></div>
       <div class="field"><label for="to">To</label><input type="month" id="to" min="2000-11" max="2025-12" value="2025-12"></div>
@@ -273,6 +293,10 @@ tr.chosen td{font-weight:600}
             <div class="chart" id="strip"></div>
             <div class="strip-note" id="strip-note"></div>
           </div>
+          <div class="wx" id="wx" style="grid-column:1/-1" hidden>
+            <div class="eyebrow" style="margin-bottom:4px">Weather and air that month, NASA POWER</div>
+            <div class="tbl-wrap"><table id="wx-t"></table></div>
+          </div>
         </div>
       </section>
 
@@ -286,6 +310,31 @@ tr.chosen td{font-weight:600}
         </div>
         <div class="cal-scroll"><div class="cal" id="cal" role="grid" aria-label="Monthly hotspot calendar"></div></div>
         <div class="legend" id="legend"></div>
+      </section>
+
+      <section aria-labelledby="h-lc" id="sec-lc">
+        <div class="sechead"><div><span class="eyebrow">What burned, MODIS land cover</span><h2 id="h-lc" style="margin-top:2px">Which land cover the hotspots fell on</h2>
+          <p>Each hotspot takes the MODIS land-cover class of its pixel in its own year (2001–2024; 2025 uses 2024). Click a type to filter the whole page to it.</p></div></div>
+        <div class="lcchips" id="lc-chips"></div>
+        <div class="chart" id="lc-chart"></div>
+      </section>
+
+      <section aria-labelledby="h-drv" id="sec-drv" hidden>
+        <div class="sechead"><div><span class="eyebrow">Why some years burn more, NASA POWER</span><h2 id="h-drv" style="margin-top:2px">Does the weather explain the fire count?</h2>
+          <p id="drv-sub">Each dot is one year: hotspots in the selected month against the weather in this area. Pick a dry-season month (Feb–Apr) for a meaningful test.</p></div></div>
+        <div class="drv">
+          <div class="field"><label for="driver">Weather measure</label>
+            <select id="driver">
+              <option value="rain4">Rainfall, 4 months up to the month</option>
+              <option value="rh">Relative humidity in the month</option>
+              <option value="tmax">Max temperature in the month</option>
+              <option value="soil">Topsoil wetness in the month</option>
+              <option value="aod">Aerosol optical depth in the month</option>
+            </select></div>
+          <div class="stat" id="drv-stat"></div>
+        </div>
+        <div class="chart" id="drv-chart"></div>
+        <p class="metric-line muted" id="drv-note"></p>
       </section>
 
       <section aria-labelledby="h-check">
@@ -315,6 +364,7 @@ tr.chosen td{font-weight:600}
               <li><strong>Reference.</strong> VIIRS S-NPP 375 m is the reference series from February 2012. It sees smaller, cooler fires than MODIS at 1 km.</li>
               <li><strong>Convert MODIS.</strong> Each MODIS detection gets a weight: the S-NPP-to-MODIS ratio for its season and 0.5° cell during 2012–2021, pulled toward the season-wide ratio where data are thin. Before Aqua (to June 2002) a Terra-only ratio is used.</li>
               <li><strong>Carry forward.</strong> S-NPP stopped delivering on 2 November 2026. NOAA-20 is linked to S-NPP the same way, so new months can join the series.</li>
+              <li><strong>Context.</strong> Each hotspot is tagged with MODIS land cover (MCD12Q1, IGBP classes) for its year. Monthly rainfall, humidity, maximum temperature, topsoil wetness and aerosol optical depth come from NASA POWER (GPM IMERG-corrected precipitation and MERRA-2), averaged over the grid points that cover the area. Aerosol over Bangladesh is dominated by regional pollution, which rose while fires fell, so it is shown as air-quality context, not as a measure of smoke.</li>
               <li><strong>Uncertainty.</strong> Estimated months carry an 80% range from leave-one-year-out errors, which grows as counts shrink.</li>
             </ol>
           </div>
@@ -331,7 +381,7 @@ tr.chosen td{font-weight:600}
   </div>
 
   <footer class="foot">
-    <span>Data: NASA FIRMS country yearly summaries, standard processing (MCD14ML C6.1; VNP14IMG and VJ114IMG v2), November 2000 to December 2025. Months from 2026 need near-real-time FIRMS data, which needs a FIRMS map key.</span>
+    <span>Data: NASA FIRMS country yearly summaries, standard processing (MCD14ML C6.1; VNP14IMG and VJ114IMG v2), November 2000 to December 2025. NASA GIBS: MODIS MCD12Q1 land cover 2001–2024, Blue Marble, VIIRS Black Marble. NASA POWER monthly climate 2001–2025. Months from 2026 need near-real-time FIRMS data, which needs a FIRMS map key.</span>
     <span>Built for the 2026 NASA Space Apps Challenge, “Harmonization of MODIS and VIIRS Hot Spots”.</span>
   </footer>
 </div>
@@ -366,6 +416,14 @@ const N=meta.n, LAY=meta.layout;
 const A=(name,T)=>new T(buf,LAY[name].offset,N);
 const P={lat:A('lat',Float32Array),lon:A('lon',Float32Array),frp:A('frp',Float32Array),e:A('e',Float32Array),
   day:A('day',Uint16Array),time:A('time',Uint16Array),src:A('src',Uint8Array),conf:A('conf',Uint8Array),type:A('type',Uint8Array),flags:A('flags',Uint8Array)};
+let CTX=null; try{ const r=await fetch('context.json'); if(r.ok) CTX=await r.json(); }catch(e){ CTX=null; }
+P.lc=LAY.lc?A('lc',Uint8Array):new Uint8Array(N);
+// land-cover groups: 0 crop, 1 forest, 2 built, 3 shrub/savanna/grass, 4 wetland/water, 5 other
+const LCG=new Uint8Array(256).fill(5); { const G=(meta.landcover||{}).groups||{}; const ord={crop:0,forest:1,built:2,shrub:3,wet:4,other:5};
+  for(const [k,cs] of Object.entries(G)) for(const c of cs) LCG[c]=ord[k]; }
+const LCN=['Cropland & mosaic','Forest','Built-up','Shrub, savanna & grass','Wetland & water','Other'];
+const LCC=['#eda100','#008300','#6250d6','#eb6834','#2a78d6','#9aa0a3'];
+const IGBP={0:'No data',1:'Evergreen needleleaf forest',2:'Evergreen broadleaf forest',3:'Deciduous needleleaf forest',4:'Deciduous broadleaf forest',5:'Mixed forest',6:'Closed shrubland',7:'Open shrubland',8:'Woody savanna',9:'Savanna',10:'Grassland',11:'Permanent wetland',12:'Cropland',13:'Urban and built-up',14:'Cropland/natural vegetation mosaic',15:'Snow and ice',16:'Barren',17:'Water',254:'Unmatched',255:'Unclassified'};
 // month index per point, series weight per point
 const dayMi=new Uint16Array(9800); { const t0=Date.UTC(2000,0,1); for(let d=0;d<9800;d++){const dt=new Date(t0+d*864e5); dayMi[d]=(dt.getUTCFullYear()-2000)*12+dt.getUTCMonth();} }
 P.mi=new Uint16Array(N); P.w=new Float32Array(N);
@@ -373,7 +431,7 @@ for(let k=0;k<N;k++){const m=dayMi[P.day[k]]; P.mi[k]=m; const inc=P.flags[k]&2,
   if(inc && ((s<=1&&m<SWITCH)||(s===2&&m>=SWITCH))) P.w[k]=P.e[k]; }
 
 // ---------- state ----------
-const S={aoi:{type:'all'},series:'harm',from:mi(2001,1),to:LAST,target:null,baseline:[2003,2025],mode:'count',agg:null};
+const S={lcf:-1,driver:'rain4',clim:null,aoi:{type:'all'},series:'harm',from:mi(2001,1),to:LAST,target:null,baseline:[2003,2025],mode:'count',agg:null};
 
 // ---------- uncertainty ----------
 function band(h,e){ if(e===2||h<=0) return [h,h];
@@ -404,20 +462,54 @@ function aoiArea(a){
 // ---------- aggregation ----------
 function aggregate(){
   const t=aoiTest(S.aoi); const g={H:new Float64Array(NM),MT:new Float64Array(NM),MA:new Float64Array(NM),VS:new Float64Array(NM),V1:new Float64Array(NM),
-    ME:new Float64Array(NM),NE:new Float64Array(NM),ST:new Float64Array(NM),idx:[]};
+    ME:new Float64Array(NM),NE:new Float64Array(NM),ST:new Float64Array(NM),G:[0,1,2,3,4,5].map(()=>new Float64Array(NM)),idx:[]};
   for(let k=0;k<N;k++){ if(t&&!t(k)) continue; g.idx.push(k); const m=P.mi[k];
     if(P.type[k]===2){g.ST[m]++; continue;}
     if(!(P.flags[k]&2)) continue;
+    const lg=LCG[P.lc[k]]; g.G[lg][m]+=P.w[k];
+    if(S.lcf>=0&&lg!==S.lcf) continue;
     g.H[m]+=P.w[k]; const s=P.src[k];
     if(s===0){g.MT[m]++;g.ME[m]+=P.e[k];} else if(s===1){g.MA[m]++;g.ME[m]+=P.e[k];} else if(s===2) g.VS[m]++; else {g.V1[m]++; g.NE[m]+=P.e[k];}
   }
-  g.idx=Uint32Array.from(g.idx); S.agg=g;
+  g.idx=Uint32Array.from(g.idx); S.agg=g; S.clim=climSel();
 }
+// ---------- NASA POWER climate for the area ----------
+const CI=i=>i-mi(2001,1);
+const dim=(y,m)=>new Date(Date.UTC(y,m,0)).getUTCDate();
+function aoiBox(a){ if(a.type==='rect') return [a.s,a.n,a.w,a.e];
+  if(a.type==='circle'){ const dl=a.r/111.32, dn=a.r/(111.32*Math.cos(a.lat*Math.PI/180)); return [a.lat-dl,a.lat+dl,a.lon-dn,a.lon+dn]; }
+  if(a.type==='poly'){ let s=90,n=-90,w=180,e=-180; for(const [la,lo] of a.pts){s=Math.min(s,la);n=Math.max(n,la);w=Math.min(w,lo);e=Math.max(e,lo);} return [s,n,w,e]; }
+  return null; }
+function climSel(){ if(!CTX) return null; const box=aoiBox(S.aoi), out={};
+  for(const [k,Pm] of Object.entries(CTX.params)){ let pts=Pm.points; const [hl,hn]=Pm.half;
+    if(box){ let sel=pts.filter(p=>p.lat+hl>=box[0]&&p.lat-hl<=box[1]&&p.lon+hn>=box[2]&&p.lon-hn<=box[3]);
+      if(!sel.length){ const cy=(box[0]+box[1])/2, cx=(box[2]+box[3])/2; sel=[pts.reduce((b,p)=>((p.lat-cy)**2+(p.lon-cx)**2<(b.lat-cy)**2+(b.lon-cx)**2?p:b))]; } pts=sel; }
+    const n=pts[0].v.length, arr=new Float64Array(n).fill(NaN);
+    for(let t=0;t<n;t++){ let s=0,c=0; for(const p of pts){ const v=p.v[t]; if(v!=null){s+=v;c++;} } if(c) arr[t]=s/c; }
+    out[k]={arr,n:pts.length}; }
+  return out; }
+function climVal(k,i){ if(!S.clim||!S.clim[k]) return NaN; const t=CI(i); if(t<0||t>=S.clim[k].arr.length) return NaN; let v=S.clim[k].arr[t]; if(k==='PRECTOTCORR') v*=dim(yOf(i),mOf(i)); return v; }
+const DRIVERS={
+  rain4:{lab:'Rainfall, 4 months to date',unit:'mm',d:0,f:i=>{let s=0; for(let j=i-3;j<=i;j++){const v=climVal('PRECTOTCORR',j); if(isNaN(v)) return NaN; s+=v;} return s;}},
+  rh:{lab:'Relative humidity',unit:'%',d:0,f:i=>climVal('RH2M',i)},
+  tmax:{lab:'Max temperature',unit:'°C',d:1,f:i=>climVal('T2M_MAX',i)},
+  soil:{lab:'Topsoil wetness',unit:'',d:2,f:i=>climVal('GWETTOP',i)},
+  aod:{lab:'Aerosol optical depth',unit:'',d:2,f:i=>climVal('AOD_55',i)} };
+function ranks(a){ const ix=a.map((v,i)=>[v,i]).sort((x,y)=>x[0]-y[0]); const r=new Array(a.length);
+  for(let i=0;i<ix.length;){ let j=i; while(j+1<ix.length&&ix[j+1][0]===ix[i][0]) j++; const av=(i+j)/2+1; for(let q=i;q<=j;q++) r[ix[q][1]]=av; i=j+1; } return r; }
+function pearson(x,y){ const n=x.length, mx=x.reduce((a,b)=>a+b,0)/n, my=y.reduce((a,b)=>a+b,0)/n; let sxy=0,sx=0,sy=0;
+  for(let i=0;i<n;i++){ const dx=x[i]-mx, dy=y[i]-my; sxy+=dx*dy; sx+=dx*dx; sy+=dy*dy; } return sx>0&&sy>0?sxy/Math.sqrt(sx*sy):NaN; }
+function spearman(x,y){ return pearson(ranks(x),ranks(y)); }
+function permP(x,y,rho){ if(isNaN(rho)) return NaN; let seed=12345; const rnd=()=>{ seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; };
+  const rx=ranks(x), ry=ranks(y); let c=0; const T=2000;
+  for(let t=0;t<T;t++){ const sh=[...ry]; for(let i=sh.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [sh[i],sh[j]]=[sh[j],sh[i]]; } if(Math.abs(pearson(rx,sh))>=Math.abs(rho)-1e-12) c++; }
+  return (c+1)/(T+1); }
 function avail(i){ if(i<FIRST||i>LAST) return false;
   if(S.series==='snpp') return i>=mi(2012,1); if(S.series==='n20') return i>=mi(2018,4); return true; }
 function val(i){const g=S.agg; switch(S.series){case 'harm':return g.H[i];case 'modis':return g.MT[i]+g.MA[i];case 'snpp':return g.VS[i];default:return g.V1[i];}}
 function isEst(i){return S.series==='harm'&&era(i)<2;}
-function seriesLabel(){return {harm:'VIIRS-equivalent hotspots',modis:'MODIS detections',snpp:'VIIRS S-NPP detections',n20:'VIIRS NOAA-20 detections'}[S.series];}
+function seriesLabel(){return (S.lcf>=0?LCN[S.lcf].toLowerCase()+' ':'')+{harm:'VIIRS-equivalent hotspots',modis:'MODIS detections',snpp:'VIIRS S-NPP detections',n20:'VIIRS NOAA-20 detections'}[S.series];}
+function lcLabel(){ return S.lcf>=0?LCN[S.lcf]:'All land cover'; }
 
 // baseline: same calendar month, baseline years, excluding the target year and Terra-only months
 function baselineVals(i){ const m=mOf(i), out=[];
@@ -466,6 +558,7 @@ const FireLayer=L.Layer.extend({
     if(fires){ const pick=[];
       for(let j=0;j<idx.length;j++){const k=idx[j], i=P.mi[k]; if(i<S.from||i>S.to||P.type[k]!==0||!(P.flags[k]&2)) continue;
         const s=P.src[k]; let on;
+        if(S.lcf>=0&&LCG[P.lc[k]]!==S.lcf) continue;
         if(S.series==='harm') on=P.w[k]>0; else if(S.series==='modis') on=s<=1; else if(S.series==='snpp') on=s===2; else on=s===3;
         if(!on) continue; const px=ax*P.lon[k]+bx, py=ay*P.lat[k]+by; if(px<-4||py<-4||px>sz.x+4||py>sz.y+4) continue; pick.push(px,py);}
       // fade dots as more are drawn, so dense areas keep some texture
@@ -540,11 +633,11 @@ function onRange(){ let f=parseMonth($('#from').value||'2001-01'), t=parseMonth(
   S.from=f; S.to=t; if(S.target<f||S.target>t) S.target=null; refresh(false); }
 $('#from').onchange=onRange; $('#to').onchange=onRange;
 $('#series').onchange=e=>{ S.series=e.target.value; refresh(false); };
-$('#baseline').onchange=e=>{ S.baseline=e.target.value.split('-').map(Number); renderCalendar(); renderReadout(); };
+$('#baseline').onchange=e=>{ S.baseline=e.target.value.split('-').map(Number); renderCalendar(); renderReadout(); renderDrivers(); };
 $('#m-count').onclick=()=>{S.mode='count';$('#m-count').setAttribute('aria-pressed','true');$('#m-anom').setAttribute('aria-pressed','false');renderCalendar();};
 $('#m-anom').onclick=()=>{S.mode='anom';$('#m-anom').setAttribute('aria-pressed','true');$('#m-count').setAttribute('aria-pressed','false');renderCalendar();};
 $('#prev').onclick=()=>step(-1); $('#next').onclick=()=>step(1);
-function step(d){ let i=S.target+d; while(i>=S.from&&i<=S.to&&!avail(i)) i+=d; if(i>=S.from&&i<=S.to){S.target=i; renderReadout(); markSel();} }
+function step(d){ let i=S.target+d; while(i>=S.from&&i<=S.to&&!avail(i)) i+=d; if(i>=S.from&&i<=S.to){S.target=i; renderReadout(); markSel(); renderDrivers();} }
 
 // ---------- tooltip ----------
 const tip=$('#tip');
@@ -588,7 +681,7 @@ function renderCalendar(){
         if(S.series==='harm'&&era(i)===0) b.classList.add('t0');
         b.setAttribute('aria-label',`${MONL[m-1]} ${y}: ${isEst(i)?'about ':''}${fmt(v)} ${seriesLabel()}`);
         b.onmousemove=ev=>showTip(cellTip(i),ev); b.onmouseleave=hideTip;
-        b.onclick=()=>{ S.target=i; renderReadout(); markSel(); };
+        b.onclick=()=>{ S.target=i; renderReadout(); markSel(); renderDrivers(); };
       }
       if(i<S.from||i>S.to) b.classList.add('out');
       cal.appendChild(b); cellEls.set(i,b); }
@@ -619,8 +712,8 @@ function renderLegend(seq,div){
 
 // ---------- readout ----------
 function renderReadout(){
-  if(S.target==null||!avail(S.target)){ // default: latest available month in range
-    let i=S.to; while(i>=S.from&&!avail(i)) i--; S.target=i; }
+  if(S.target==null||!avail(S.target)){ // default: the latest April (peak fire month) in range, else the latest month
+    let i=S.to; while(i>=S.from&&!(avail(i)&&mOf(i)===4)) i--; if(i<S.from){ i=S.to; while(i>=S.from&&!avail(i)) i--; } S.target=i; }
   const i=S.target, v=val(i), e=era(i);
   $('#ro-title').textContent=`${MON[mOf(i)-1]} ${yOf(i)}`;
   $('#prev').disabled=i<=S.from; $('#next').disabled=i>=S.to;
@@ -636,7 +729,7 @@ function renderReadout(){
   kv+=`<dt>${MON[mOf(i)-1]} median</dt><dd>${fmt(med)}</dd><dt>Typical range</dt><dd>${fmt(p10)}–${fmt(p90)} <span class="muted">(P10–P90)</span></dd>`;
   if(!isNaN(p)) kv+=`<dt>Rank</dt><dd>higher than ${bv.filter(x=>x<v-1e-9).length} of ${bv.length} baseline years</dd>`;
   kv+=`<dt>Source</dt><dd style="font-family:var(--f-body)">${S.series!=='harm'?'Raw sensor counts':e===0?'MODIS Terra only, converted':e===1?'MODIS Terra + Aqua, converted':'VIIRS S-NPP, observed'}</dd>`;
-  $('#ro-kv').innerHTML=kv;
+  $('#ro-kv').innerHTML=kv; renderWeather(i);
   $('#strip-title').textContent=`${MONL[mOf(i)-1]}s, ${S.baseline[0]}–${S.baseline[1]}`;
   renderStrip(bl,v,i);
 }
@@ -704,6 +797,70 @@ function renderMethod(){
   $('#cv-note').textContent=`National monthly error is the median absolute error over months with at least 50 hotspots. The 80% ranges contained the observed value ${fmt(u.coverage_80*100)}% of the time in testing. Applied to years it never saw, the MODIS-based estimate came within ${fmt(Math.max(...['2023','2024','2025'].map(k=>Math.abs(d[k].ratio-1)))*100)}% of S-NPP in 2023–2025, while the Terra and Aqua overpasses drifted by up to an hour. 2022 came in at ${fmt(d['2022'].ratio*100)}% of S-NPP.`;
 }
 
+// ---------- weather table in the readout ----------
+function renderWeather(i){
+  const box=$('#wx'); if(!S.clim){ box.hidden=true; return; } box.hidden=false;
+  const rows=[['Rainfall in the month','mm',0,j=>climVal('PRECTOTCORR',j),'pct'],['Rainfall, 4 months to date','mm',0,DRIVERS.rain4.f,'pct'],
+    ['Relative humidity','%',0,DRIVERS.rh.f,'abs'],['Max temperature','°C',1,DRIVERS.tmax.f,'abs'],['Topsoil wetness','0–1',2,DRIVERS.soil.f,'abs'],['Aerosol optical depth','',2,DRIVERS.aod.f,'pct']];
+  const m=mOf(i); let h='<thead><tr><th>Measure</th><th>'+MON[m-1]+' '+yOf(i)+'</th><th>Normal</th><th>Difference</th></tr></thead><tbody>';
+  for(const [lab,unit,dp,f,mode] of rows){ const v=f(i); const base=[]; for(let y=S.baseline[0];y<=S.baseline[1];y++){ const j=mi(y,m); if(j===i) continue; const x=f(j); if(!isNaN(x)) base.push(x);} const med=quant(base,.5);
+    let diff='—', cls=''; if(!isNaN(v)&&!isNaN(med)){ if(mode==='pct'&&med>0){ const d=(v/med-1)*100; diff=(d>=0?'+':'')+fmt(d)+'%'; } else if(mode==='abs'){ const d=v-med; diff=(d>=0?'+':'')+fmt(d,dp)+(unit==='%'?' pts':unit==='°C'?' °C':''); } }
+    h+=`<tr><td>${lab}</td><td>${isNaN(v)?'—':fmt(v,dp)+(unit&&unit!=='0–1'?' '+unit:'')}</td><td>${isNaN(med)?'—':fmt(med,dp)}</td><td>${diff}</td></tr>`; }
+  $('#wx-t').innerHTML=h+'</tbody>';
+}
+// ---------- what burned (land cover by year) ----------
+function renderLC(){
+  const g=S.agg, y0=Math.max(yOf(S.from),2001), y1=yOf(S.to), years=[]; for(let y=y0;y<=y1;y++) years.push(y);
+  const tot=[0,0,0,0,0,0]; const per=years.map(y=>{ const v=[0,0,0,0,0,0]; for(let m=1;m<=12;m++){ const i=mi(y,m); if(i<S.from||i>S.to) continue; for(let q=0;q<6;q++){ v[q]+=g.G[q][i]; if(y>=2003) tot[q]+=g.G[q][i]; } } return v; });
+  const T=tot.reduce((a,b)=>a+b,0)||1;
+  $('#lc-chips').innerHTML=[0,1,3,2,4,5].map(q=>`<button class="chip" data-q="${q}" aria-pressed="${S.lcf===q}"><i style="background:${LCC[q]}"></i>${LCN[q]} <span class="pct">${fmt(tot[q]/T*100,tot[q]/T<0.01?1:0)}%</span></button>`).join('')+(S.lcf>=0?'<button class="chip" data-q="-1">Show all</button>':'');
+  $('#lc-chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ const q=+b.dataset.q; setLCF(S.lcf===q?-1:q); });
+  const el=$('#lc-chart'); const W=Math.max(300,el.clientWidth||600), H=Math.round(Math.min(240,Math.max(170,W*0.3))), ml=48, mr=8, mt=10, mb=26;
+  const sums=per.map(v=>v.reduce((a,b)=>a+b,0)); const scaleYears=years.map((y,j)=>y>=2003?sums[j]:0); const maxv=Math.max(1,...scaleYears)*1.08; const ticks=niceTicks(0,maxv,4);
+  const bw=(W-ml-mr)/years.length, y=v=>mt+(H-mt-mb)*(1-Math.min(v,maxv)/maxv);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Hotspots by land cover and year">`;
+  for(const t of ticks) s+=`<line x1="${ml}" x2="${W-mr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--rule)"/><text x="${ml-6}" y="${y(t)+4}" text-anchor="end">${t>=1000?fmt(t/1000,t%1000?1:0)+'k':fmt(t)}</text>`;
+  const order=[0,1,2,3,4,5];
+  years.forEach((yy,j)=>{ let acc=0; const x=ml+j*bw+Math.min(2,bw*0.15), w=Math.max(1,bw-Math.min(4,bw*0.3)); const faint=yy<=2002;
+    for(const q of order){ const v=per[j][q]; if(v<=0) continue; if(S.lcf>=0&&q!==S.lcf){ acc+=v; continue; } const y1v=y(acc), y2v=y(acc+v); acc+=v; const hgt=Math.max(0,y1v-y2v-1); if(hgt<=0) continue;
+      s+=`<rect x="${x}" y="${y2v}" width="${w}" height="${hgt}" fill="${LCC[q]}" opacity="${faint?0.35:1}"/>`; }
+    if(S.lcf>=0){ /* show the rest as an outline so the share stays readable */ const ytop=y(sums[j]); s+=`<rect x="${x}" y="${ytop}" width="${w}" height="${Math.max(0,y(0)-ytop)}" fill="none" stroke="var(--rule-strong)" stroke-width="1"/>`; }
+    if(sums[j]>maxv) s+=`<text x="${x+w/2}" y="${mt+8}" text-anchor="middle">↑</text>`;
+    if(!(W<520&&j%2)) s+=`<text x="${x+w/2}" y="${H-8}" text-anchor="middle">${W<520?"'"+String(yy).slice(2):yy}</text>`;
+    s+=`<rect class="hov" data-j="${j}" x="${ml+j*bw}" y="${mt}" width="${bw}" height="${H-mt-mb}" fill="transparent"/>`; });
+  s+='</svg>'; el.innerHTML=s;
+  el.querySelectorAll('.hov').forEach(r=>{ const j=+r.dataset.j; r.onmousemove=ev=>showTip(`<div class="t">${years[j]}${years[j]<=2002?' · Terra-only, low confidence':''}</div>`+order.filter(q=>per[j][q]>=0.5).map(q=>row(`<i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${LCC[q]};margin-right:6px"></i>${LCN[q]}`,fmt(per[j][q]))).join('')+row('<b>Total</b>',fmt(sums[j])),ev); r.onmouseleave=hideTip; });
+}
+function setLCF(q){ S.lcf=q; $('#lcf').value=String(q); refresh(true); }
+// ---------- weather drivers scatter ----------
+function renderDrivers(){
+  const sec=$('#sec-drv'); if(!S.clim){ sec.hidden=true; return; } sec.hidden=false;
+  const D=DRIVERS[S.driver], m=mOf(S.target), pts=[];
+  for(let y=Math.max(S.baseline[0],2003);y<=Math.min(S.baseline[1],2025);y++){ const i=mi(y,m); if(!avail(i)) continue; const x=D.f(i), v=val(i); if(isNaN(x)) continue; pts.push({y,x,v,i}); }
+  const sub=$('#drv-sub'); sub.textContent=`Each dot is one year: ${seriesLabel()} in ${MONL[m-1]} against ${D.lab.toLowerCase()} in this area. ${[2,3,4].includes(m)?'':'Fires are rare in this month, so pick February, March or April for a meaningful test.'}`;
+  const el=$('#drv-chart'); if(pts.length<5){ el.innerHTML=''; $('#drv-stat').textContent='Not enough years.'; return; }
+  const xs=pts.map(p=>p.x), ys=pts.map(p=>p.v), rho=spearman(xs,ys), pv=permP(xs,ys,rho);
+  const pv2=pts.filter(p=>p.y>=2012), rho2=pv2.length>=6?spearman(pv2.map(p=>p.x),pv2.map(p=>p.v)):NaN;
+  $('#drv-stat').innerHTML=`Spearman ρ <b>${isNaN(rho)?'—':(rho>=0?'+':'−')+fmt(Math.abs(rho),2)}</b> &nbsp;·&nbsp; p ${pv<0.001?'&lt; 0.001':'= '+fmt(pv,3)} (permutation) &nbsp;·&nbsp; ${pts.length} years${isNaN(rho2)?'':` &nbsp;·&nbsp; VIIRS years only ρ ${(rho2>=0?'+':'−')+fmt(Math.abs(rho2),2)}`}`;
+  const W=Math.max(300,el.clientWidth||600), H=Math.round(Math.min(300,Math.max(220,W*0.42))), ml=52, mr=16, mt=12, mb=36;
+  const xmin=Math.min(...xs), xmax=Math.max(...xs), pad=(xmax-xmin)*0.06||1; const x0=xmin-pad, x1=xmax+pad; const ymax=Math.max(1,...ys)*1.08;
+  const X=v=>ml+(W-ml-mr)*((v-x0)/(x1-x0)), Y=v=>mt+(H-mt-mb)*(1-v/ymax);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Fires against ${D.lab}">`;
+  for(const t of niceTicks(0,ymax,4)) s+=`<line x1="${ml}" x2="${W-mr}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--rule)"/><text x="${ml-6}" y="${Y(t)+4}" text-anchor="end">${t>=1000?fmt(t/1000,t%1000?1:0)+'k':fmt(t)}</text>`;
+  for(const t of niceTicks(x0,x1,5)) s+=`<line x1="${X(t)}" x2="${X(t)}" y1="${H-mb}" y2="${H-mb+4}" stroke="var(--rule-strong)"/><text x="${X(t)}" y="${H-mb+16}" text-anchor="middle">${fmt(t,D.d)}</text>`;
+  s+=`<text x="${(ml+W-mr)/2}" y="${H-4}" text-anchor="middle" class="lbl">${D.lab}${D.unit?' ('+D.unit+')':''}</text>`;
+  s+=`<line x1="${ml}" x2="${W-mr}" y1="${H-mb}" y2="${H-mb}" stroke="var(--rule-strong)"/>`;
+  for(const p of pts){ const sel=p.i===S.target, viirs=p.y>=2012; s+=`<circle cx="${X(p.x)}" cy="${Y(p.v)}" r="${sel?6.5:4.5}" fill="${sel?'var(--accent)':viirs?'var(--c1)':'var(--panel)'}" stroke="${sel?'var(--panel)':'var(--c1)'}" stroke-width="${sel?2:1.6}" class="pt" data-y="${p.y}"/>`; }
+  const T=pts.find(p=>p.i===S.target); if(T) s+=`<text class="lbl" x="${X(T.x)+9}" y="${Y(T.v)-8}" style="fill:var(--accent-ink);font-weight:500">${T.y}</text>`;
+  s+='</svg>'; el.innerHTML=s;
+  el.querySelectorAll('.pt').forEach(c=>{ const p=pts.find(q=>q.y===+c.dataset.y); c.style.cursor='pointer';
+    c.onmousemove=ev=>showTip(`<div class="t">${MON[m-1]} ${p.y}</div>${row(seriesLabel(),(isEst(p.i)?'≈':'')+fmt(p.v))}${row(D.lab,fmt(p.x,D.d)+(D.unit?' '+D.unit:''))}`,ev); c.onmouseleave=hideTip;
+    c.onclick=()=>{ S.target=p.i; renderReadout(); markSel(); renderDrivers(); }; });
+  $('#drv-note').innerHTML=`Filled dots are VIIRS-observed years (2012 on); open dots are MODIS-estimated. A negative ρ means wetter or more humid conditions go with fewer fires. Weather is averaged over ${S.clim.PRECTOTCORR.n} NASA POWER grid point${S.clim.PRECTOTCORR.n>1?'s':''} covering this area.${S.driver==='aod'?' Aerosol over Bangladesh mostly reflects regional pollution, which rose while fires fell, so a negative link here is not a smoke signal.':''}`;
+}
+$('#driver').onchange=e=>{ S.driver=e.target.value; renderDrivers(); };
+$('#lcf').onchange=e=>setLCF(+e.target.value);
+
 // ---------- exports ----------
 let dlP=null; function downloadsApi(){ if(!dlP) dlP=(window.claude&&window.claude.use)?window.claude.use('downloads').catch(()=>null):Promise.resolve(null); return dlP; }
 async function saveFile(name,text){ const toast=$('#toast'); toast.textContent='Preparing '+name+'…';
@@ -714,29 +871,31 @@ async function saveFile(name,text){ const toast=$('#toast'); toast.textContent='
 const slug=()=>({all:'bangladesh',rect:'box',poly:'shape',circle:'radius'})[S.aoi.type];
 const ymStr=i=>`${yOf(i)}${String(mOf(i)).padStart(2,'0')}`;
 $('#x-pts').onclick=()=>{ const g=S.agg, SRC=['MODIS','MODIS','VIIRS','VIIRS'], SAT=['Terra','Aqua','Suomi-NPP','NOAA-20'], TYP=['presumed vegetation fire','active volcano','other static land source','offshore'];
-  const lines=['sensor,satellite,acq_date,acq_time_utc,latitude,longitude,confidence,frp_mw,fire_type,day_night,counted_in_series,snpp_equivalent_weight,series_period'];
+  const lines=['sensor,satellite,acq_date,acq_time_utc,latitude,longitude,confidence,frp_mw,fire_type,day_night,counted_in_series,snpp_equivalent_weight,series_period,modis_land_cover,land_cover_group'];
   const t0=Date.UTC(2000,0,1);
-  for(let j=0;j<g.idx.length;j++){ const k=g.idx[j], i=P.mi[k]; if(i<S.from||i>S.to) continue; const s=P.src[k], cf=P.conf[k];
+  for(let j=0;j<g.idx.length;j++){ const k=g.idx[j], i=P.mi[k]; if(i<S.from||i>S.to) continue; if(S.lcf>=0&&LCG[P.lc[k]]!==S.lcf) continue; const s=P.src[k], cf=P.conf[k];
     const date=new Date(t0+P.day[k]*864e5).toISOString().slice(0,10); const tm=String(P.time[k]).padStart(4,'0');
     const conf=s<=1?cf:({201:'low',202:'nominal',203:'high'})[cf]; const e=era(i);
-    lines.push([SRC[s],SAT[s],date,tm,P.lat[k].toFixed(4),P.lon[k].toFixed(4),conf,P.frp[k].toFixed(1),TYP[P.type[k]]||P.type[k],(P.flags[k]&1)?'N':'D',P.w[k]>0?'yes':'no',P.e[k].toFixed(3),e===0?'terra_only':e===1?'modis_estimated':'viirs_observed'].join(',')); }
-  saveFile(`firms_hotspots_${slug()}_${ymStr(S.from)}-${ymStr(S.to)}.csv`,lines.join('\n')+'\n'); };
-$('#x-cal').onclick=()=>{ const g=S.agg; const lines=['year,month,harmonized_snpp_equivalent,low80,high80,source_period,modis_terra,modis_aqua,viirs_snpp,viirs_noaa20,static_sources,baseline_median,baseline_percentile,class'];
+    lines.push([SRC[s],SAT[s],date,tm,P.lat[k].toFixed(4),P.lon[k].toFixed(4),conf,P.frp[k].toFixed(1),TYP[P.type[k]]||P.type[k],(P.flags[k]&1)?'N':'D',P.w[k]>0?'yes':'no',P.e[k].toFixed(3),e===0?'terra_only':e===1?'modis_estimated':'viirs_observed','"'+(IGBP[P.lc[k]]||P.lc[k])+'"','"'+LCN[LCG[P.lc[k]]]+'"'].join(',')); }
+  saveFile(`firms_hotspots_${slug()}${S.lcf>=0?'_'+['cropland','forest','builtup','shrub','wetland','other'][S.lcf]:''}_${ymStr(S.from)}-${ymStr(S.to)}.csv`,lines.join('\n')+'\n'); };
+$('#x-cal').onclick=()=>{ const g=S.agg; const lines=['year,month,harmonized_snpp_equivalent,low80,high80,source_period,modis_terra,modis_aqua,viirs_snpp,viirs_noaa20,static_sources,baseline_median,baseline_percentile,class,cropland,forest,built_up,shrub_savanna_grass,wetland_water,other,rain_mm,rain_4mo_mm,rh_pct,tmax_c,topsoil_wetness,aod_550'];
   const keep=S.series; S.series='harm';
   for(let i=S.from;i<=S.to;i++){ const v=g.H[i], e=era(i), [lo,hi]=band(v,e); const b=baselineVals(i).map(o=>o.v); const p=e===0?NaN:pctRank(v,b); const c=e===0?null:classOf(p);
-    lines.push([yOf(i),mOf(i),v.toFixed(1),lo.toFixed(1),hi.toFixed(1),e===0?'terra_only':e===1?'modis_estimated':'viirs_observed',g.MT[i],g.MA[i],i>=mi(2012,1)?g.VS[i]:'',i>=mi(2018,4)?g.V1[i]:'',g.ST[i],b.length?quant(b,.5).toFixed(1):'',isNaN(p)?'':p.toFixed(3),c==null?'':CLASSES[c].lab].join(',')); }
+    lines.push([yOf(i),mOf(i),v.toFixed(1),lo.toFixed(1),hi.toFixed(1),e===0?'terra_only':e===1?'modis_estimated':'viirs_observed',g.MT[i],g.MA[i],i>=mi(2012,1)?g.VS[i]:'',i>=mi(2018,4)?g.V1[i]:'',g.ST[i],b.length?quant(b,.5).toFixed(1):'',isNaN(p)?'':p.toFixed(3),c==null?'':CLASSES[c].lab,...[0,1,2,3,4,5].map(q=>g.G[q][i].toFixed(1)),
+      ...[climVal('PRECTOTCORR',i),DRIVERS.rain4.f(i),DRIVERS.rh.f(i),DRIVERS.tmax.f(i),DRIVERS.soil.f(i),DRIVERS.aod.f(i)].map(x=>isNaN(x)?'':x.toFixed(2))].join(',')); }
   S.series=keep; saveFile(`fire_calendar_${slug()}_${ymStr(S.from)}-${ymStr(S.to)}.csv`,lines.join('\n')+'\n'); };
 
 // ---------- refresh ----------
 function refresh(reagg){ if(reagg||!S.agg) aggregate();
   $('#exp-sub').textContent=`Files cover ${$('#aoi-name').textContent.toLowerCase()} from ${MON[mOf(S.from)-1]} ${yOf(S.from)} to ${MON[mOf(S.to)-1]} ${yOf(S.to)}. ${fmt(S.agg.idx.length)} detections in this area across all years.`;
-  renderCalendar(); renderReadout(); renderCheck(); fireLayer.redraw(); }
-let rt; window.addEventListener('resize',()=>{clearTimeout(rt); rt=setTimeout(()=>{renderCheck(); renderReadout();},150);});
+  $('#exp-sub').textContent+=S.lcf>=0?` Filtered to ${LCN[S.lcf].toLowerCase()}.`:'';
+  renderCalendar(); renderReadout(); renderLC(); renderDrivers(); renderCheck(); fireLayer.redraw(); }
+let rt; window.addEventListener('resize',()=>{clearTimeout(rt); rt=setTimeout(()=>{renderCheck(); renderReadout(); renderLC(); renderDrivers();},150);});
 const mq=matchMedia('(prefers-color-scheme: dark)'); const rerender=()=>{ renderCalendar(); renderCheck(); renderReadout(); fireLayer.redraw(); if(aoiShape) aoiShape.setStyle(shapeStyle()); };
 mq.addEventListener&&mq.addEventListener('change',rerender); new MutationObserver(rerender).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
 renderMethod(); refresh(true); $('#loading').remove();
-window.__agun={S,P,meta};   // for checking in the console
+window.__agun={S,P,meta,CTX};   // for checking in the console
 })();
 </script>
 </body></html>
