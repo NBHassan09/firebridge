@@ -1,0 +1,1 @@
+{ "headers": [ { "source": "/(.*)\\.(txt|json|jpg|png)", "headers": [ { "key": "Cache-Control", "value": "public, max-age=86400" } ] } ] }

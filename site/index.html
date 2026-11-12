@@ -1,0 +1,742 @@
+<!doctype html><html lang="en"><head><title>FireBridge</title><meta name="description" content="Harmonized MODIS + VIIRS burning-activity calendar for Bangladesh, built on NASA FIRMS hotspots."><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Single light theme on white, by request. Layout: instrument console. Map panel (sticky, left) drives a reading column (right): readout, calendar, check, method. */
+:root{
+  color-scheme:light;
+  --bg:#ffffff; --panel:#ffffff; --ink:#1c2226; --muted:#5a646a; --faint:#8a9398; --rule:#d8dcd9; --rule-strong:#b9bfbc;
+  --accent:#c2410c; --accent-ink:#9a330a; --mapbg:#dfe4e2; --focus:#2863ab;
+  --s1:#feebd6; --s2:#f6cba5; --s3:#f1a774; --s4:#ec8047; --s5:#d75928; --s6:#b23b19; --s7:#852919; --s0:#eceeeb;
+  --d1:#2863ab; --d2:#90b5dc; --d3:#e6e4e1; --d4:#e29f81; --d5:#c0401f;
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a;
+  --hatch:rgba(28,34,38,.32); --dot:255,110,40; --static:#7c5cd6;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-bn:"Hind Siliguri","Noto Sans Bengali",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:14px;line-height:1.5}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.wrap{max-width:1480px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+h1,h2,h3{text-wrap:balance;margin:0}
+h2{font-family:var(--f-display);font-weight:600;font-size:19px;letter-spacing:.005em}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* header */
+.masthead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-bottom:14px;border-bottom:1px solid var(--rule);margin-bottom:18px}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand h1{font-family:var(--f-display);font-weight:700;font-size:clamp(26px,3.4vw,36px);letter-spacing:-.01em;line-height:1}
+.brand .bn{font-family:var(--f-display);font-weight:600;font-size:clamp(16px,2vw,20px);color:var(--accent)}
+.lede{max-width:70ch;color:var(--muted);margin:6px 0 0}
+.controls-top{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field label{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+select,input[type=month],input[type=number]{background:var(--panel);border:1px solid var(--rule-strong);border-radius:4px;padding:6px 8px;min-height:34px;max-width:100%}
+
+/* main grid */
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:22px;align-items:start}
+@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}}
+.side{position:sticky;top:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+@media (max-width:980px){.side{position:static}}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:6px}
+.mappanel{overflow:hidden}
+.toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:10px;border-bottom:1px solid var(--rule);align-items:center}
+.btn{border:1px solid var(--rule-strong);background:var(--panel);border-radius:4px;padding:5px 10px;min-height:32px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--ink)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn svg{width:14px;height:14px;flex:none}
+.toolbar select{min-height:32px;padding:4px 6px}
+#map{height:min(64vh,620px);min-height:340px;background:var(--mapbg);position:relative}
+@media (max-width:980px){#map{height:56vh}}
+.hint{font-size:12.5px;padding:7px 10px;border-bottom:1px solid var(--rule);background:color-mix(in srgb,var(--accent) 10%,var(--panel));}
+.circlebox{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border-bottom:1px solid var(--rule);align-items:flex-end}
+.circlebox .field input{width:96px}
+.layers{display:flex;flex-wrap:wrap;gap:6px 16px;padding:9px 10px;align-items:center;font-size:13px}
+.layers label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:50%}
+.aoibar{padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.aoibar strong{font-family:var(--f-display);font-size:16px;font-weight:600}
+.caption{font-size:11.5px;color:var(--faint);padding:0 2px}
+
+/* reading column */
+.col{display:flex;flex-direction:column;gap:26px;min-width:0}
+.sechead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:8px 16px;margin-bottom:10px}
+.sechead p{margin:2px 0 0;color:var(--muted);max-width:68ch}
+
+/* readout */
+.readout{padding:16px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px}
+@media (max-width:620px){.readout{grid-template-columns:minmax(0,1fr)}}
+.ro-month{display:flex;align-items:center;gap:8px}
+.ro-month h3{font-family:var(--f-display);font-size:22px;font-weight:600;min-width:9ch}
+.iconbtn{border:1px solid var(--rule-strong);background:var(--panel);border-radius:4px;width:30px;height:30px;display:inline-grid;place-items:center;cursor:pointer}
+.iconbtn:hover{border-color:var(--ink)}
+.big{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:40px;font-weight:500;line-height:1.05;letter-spacing:-.02em;margin-top:8px}
+.big small{font-size:14px;color:var(--muted);letter-spacing:0;font-weight:400}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px 3px 8px;font-size:13px;font-weight:600;margin-top:8px;border:1px solid transparent}
+.pill .dotc{width:10px;height:10px;border-radius:50%}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin-top:10px;font-size:13px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.strip-wrap{min-width:0}
+.strip-note{font-size:12.5px;color:var(--muted);margin-top:6px}
+
+/* calendar */
+.cal-scroll{overflow-x:auto}
+.cal{display:grid;grid-template-columns:44px 6px repeat(12,minmax(20px,1fr)) minmax(110px,1.6fr);gap:2px;min-width:560px}
+.cal .hd{font-family:var(--f-mono);font-size:11px;color:var(--muted);text-align:center;padding-bottom:3px}
+.cal .hd.tot{text-align:left;padding-left:6px}
+@media (max-width:560px){.cal{grid-template-columns:30px 4px repeat(12,minmax(0,1fr)) 58px;min-width:0;gap:1.5px}.cell{height:19px}.tot .bar{display:none}.cal .yr{font-size:10.5px}.cal .medrow{font-size:9px}.cal .hd.tot{font-size:0}.cal .hd.tot::after{content:'Total';font-size:10px}}
+.cal .yr{font-family:var(--f-mono);font-size:12px;color:var(--muted);display:flex;align-items:center;justify-content:flex-end;padding-right:4px;font-variant-numeric:tabular-nums}
+.cal .era{border-radius:1px}
+.era-0{background:repeating-linear-gradient(135deg,var(--faint) 0 2px,transparent 2px 4px)}
+.era-1{background:var(--faint);opacity:.45}
+.era-2{background:var(--ink)}
+.cell{height:22px;border:0;border-radius:2px;padding:0;cursor:pointer;position:relative;background:var(--s0)}
+.cell.na{background:transparent;outline:1px dashed var(--rule-strong);outline-offset:-1px;cursor:default}
+.cell.out{opacity:.25}
+.cell.t0::after{content:"";position:absolute;inset:0;border-radius:2px;background:repeating-linear-gradient(135deg,var(--hatch) 0 1.5px,transparent 1.5px 5px)}
+.cell.sel{box-shadow:0 0 0 2px var(--ink);z-index:2}
+.cell:hover{box-shadow:0 0 0 1.5px var(--muted);z-index:1}
+.cell.sel:hover{box-shadow:0 0 0 2px var(--ink)}
+.tot{display:flex;align-items:center;gap:6px;padding-left:6px;min-width:0}
+.tot .bar{position:relative;height:10px;flex:1;min-width:30px}
+.tot .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:0 3px 3px 0}
+.tot .bar i.est{background:color-mix(in srgb,var(--accent) 55%,transparent)}
+.tot .bar b{position:absolute;top:4px;height:2px;background:var(--ink);opacity:.55}
+.tot .v{font-family:var(--f-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--muted);min-width:5.5ch;text-align:right}
+.cal .medrow{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);text-align:center;padding-top:4px;border-top:1px solid var(--rule);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal .medlab{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);text-align:right;padding-top:4px;padding-right:4px;border-top:1px solid var(--rule);grid-column:span 2}
+.legend{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:flex-start;margin-top:12px;font-size:12px;color:var(--muted)}
+.ramp{display:flex;flex-direction:column;gap:3px}
+.ramp .sw{display:flex;gap:2px}
+.ramp .sw span{width:30px;height:12px;border-radius:2px}
+.ramp .lb{display:flex;gap:2px;font-family:var(--f-mono);font-size:10.5px}
+.ramp .lb span{width:30px;text-align:left}
+.lg-item{display:inline-flex;align-items:center;gap:6px}
+.lg-box{width:16px;height:12px;border-radius:2px;display:inline-block;position:relative;background:var(--s3)}
+.seg{display:inline-flex;border:1px solid var(--rule-strong);border-radius:4px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:5px 10px;min-height:30px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+
+/* chart */
+.chart{position:relative;min-width:0}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+.chart .lbl{fill:var(--ink);font-size:11.5px}
+.keyrow{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;margin-bottom:6px}
+.keyrow span{display:inline-flex;align-items:center;gap:6px}
+.keyrow i{width:16px;height:2px;display:inline-block;border-radius:1px}
+.metric-line{font-size:13px;margin-top:8px}
+
+/* exports, method */
+.exports{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toast{font-size:12.5px;color:var(--muted)}
+.method{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px 28px}
+@media (max-width:720px){.method{grid-template-columns:minmax(0,1fr)}}
+.method p{margin:0 0 8px;max-width:68ch}
+.method ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:68ch}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{text-align:right;padding:5px 8px;border-bottom:1px solid var(--rule);font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}
+th{font-family:var(--f-mono);font-weight:500;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+td{font-family:var(--f-mono)}
+td:first-child{font-family:var(--f-body)}
+tr.chosen td{font-weight:600}
+.foot{margin-top:28px;padding-top:12px;border-top:1px solid var(--rule);font-size:12px;color:var(--faint);display:flex;flex-direction:column;gap:4px}
+
+/* tooltip */
+.tip{position:fixed;z-index:3000;pointer-events:none;background:var(--panel);color:var(--ink);border:1px solid var(--rule-strong);border-radius:5px;padding:8px 10px;font-size:12.5px;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:290px}
+.tip .t{font-family:var(--f-display);font-weight:600;font-size:14px;margin-bottom:2px}
+.tip .r{display:flex;justify-content:space-between;gap:14px}
+.tip .r span:last-child{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.loading{position:absolute;inset:0;display:grid;place-items:center;z-index:900;background:color-mix(in srgb,var(--mapbg) 85%,transparent);font-size:13px;color:var(--muted);text-align:center;padding:16px}
+
+/* leaflet core (inlined) */
+.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane>svg,.leaflet-pane>canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}
+.leaflet-container{overflow:hidden;-webkit-tap-highlight-color:transparent;font-family:var(--f-body);outline-offset:1px}
+.leaflet-container img.leaflet-image-layer,.leaflet-container .leaflet-overlay-pane svg{max-width:none!important;max-height:none!important}
+.leaflet-container img.leaflet-image-layer{image-rendering:auto}
+.leaflet-touch-zoom{touch-action:pan-x pan-y}.leaflet-touch-drag{touch-action:none}.leaflet-touch-drag.leaflet-touch-zoom{touch-action:none}
+.leaflet-pane{z-index:400}.leaflet-tile-pane{z-index:200}.leaflet-overlay-pane{z-index:400}.leaflet-shadow-pane{z-index:500}.leaflet-marker-pane{z-index:600}.leaflet-tooltip-pane{z-index:650}.leaflet-popup-pane{z-index:700}
+.leaflet-map-pane canvas{z-index:100}.leaflet-map-pane svg{z-index:200}
+.leaflet-pane>svg path,.leaflet-tile-container{pointer-events:none}
+.leaflet-pane>svg path.leaflet-interactive{pointer-events:auto}
+.leaflet-control{position:relative;z-index:800;pointer-events:auto;float:left;clear:both}
+.leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}
+.leaflet-top{top:0}.leaflet-right{right:0}.leaflet-bottom{bottom:0}.leaflet-left{left:0}
+.leaflet-right .leaflet-control{float:right}
+.leaflet-top .leaflet-control{margin-top:10px}.leaflet-bottom .leaflet-control{margin-bottom:10px}
+.leaflet-left .leaflet-control{margin-left:10px}.leaflet-right .leaflet-control{margin-right:10px}
+.leaflet-grab{cursor:grab}.leaflet-dragging .leaflet-grab{cursor:grabbing}
+.leaflet-container.drawing,.leaflet-container.drawing .leaflet-grab{cursor:crosshair}
+.leaflet-zoom-animated{transform-origin:0 0}
+.leaflet-bar{border:1px solid var(--rule-strong);border-radius:4px;overflow:hidden;background:var(--panel)}
+.leaflet-bar a{display:block;width:32px;height:32px;line-height:30px;text-align:center;text-decoration:none;color:var(--ink);background:var(--panel);font:600 18px/30px var(--f-body)}
+.leaflet-bar a+a{border-top:1px solid var(--rule)}
+.leaflet-bar a:hover{background:var(--bg)}
+.leaflet-bar a.leaflet-disabled{color:var(--faint);cursor:default}
+.leaflet-control-scale-line{border:1px solid var(--muted);border-top:0;font:11px var(--f-mono);padding:0 4px;background:color-mix(in srgb,var(--panel) 80%,transparent);color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <div class="brand">
+        <h1>FireBridge</h1><span class="bn">Bangladesh burning-activity calendar</span>
+      </div>
+      <p class="lede">25 years of NASA satellite hotspots joined into one record. MODIS (2000–2012) is bridged to VIIRS-equivalent counts, so the calendar reads as one series no matter which sensor saw the fire.</p>
+    </div>
+    <div class="controls-top">
+      <div class="field"><label for="series">Series</label>
+        <select id="series">
+          <option value="harm">Harmonized (VIIRS S-NPP equivalent)</option>
+          <option value="modis">MODIS Terra + Aqua, raw</option>
+          <option value="snpp">VIIRS S-NPP, raw</option>
+          <option value="n20">VIIRS NOAA-20, raw</option>
+        </select></div>
+      <div class="field"><label for="from">From</label><input type="month" id="from" min="2000-11" max="2025-12" value="2001-01"></div>
+      <div class="field"><label for="to">To</label><input type="month" id="to" min="2000-11" max="2025-12" value="2025-12"></div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <aside class="side">
+      <div class="panel mappanel">
+        <div class="toolbar" role="toolbar" aria-label="Area of interest">
+          <button class="btn" id="b-all" aria-pressed="true">Whole country</button>
+          <button class="btn" id="b-rect" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="3.5" width="11" height="9" stroke-dasharray="2 1.5"/></svg>Draw box</button>
+          <button class="btn" id="b-poly" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12 L2.5 5 L8 2.5 L13.5 6 L11 13 Z" stroke-dasharray="2 1.5"/></svg>Draw shape</button>
+          <button class="btn" id="b-circ" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5" stroke-dasharray="2 1.5"/><circle cx="8" cy="8" r="1" fill="currentColor"/></svg>Point + radius</button>
+          <select id="preset" aria-label="Example areas">
+            <option value="">Example areas…</option>
+            <option value="cht">Chittagong Hill Tracts (approx. box)</option>
+            <option value="sund">Sundarbans (approx. box)</option>
+            <option value="haor">Sylhet haor basin (approx. box)</option>
+            <option value="barind">Barind tract, northwest (approx. box)</option>
+            <option value="dhaka">Dhaka east fringe, Matuail (approx. box)</option>
+          </select>
+        </div>
+        <div class="hint" id="hint" hidden></div>
+        <div class="circlebox" id="circlebox" hidden>
+          <div class="field"><label for="c-lat">Latitude °N</label><input type="number" id="c-lat" step="0.001" min="20" max="27" value="23.710"></div>
+          <div class="field"><label for="c-lon">Longitude °E</label><input type="number" id="c-lon" step="0.001" min="88" max="93" value="90.470"></div>
+          <div class="field"><label for="c-r">Radius km</label><input type="number" id="c-r" step="1" min="1" max="300" value="15"></div>
+          <button class="btn" id="c-pick">Pick on map</button>
+          <button class="btn primary" id="c-apply">Apply</button>
+        </div>
+        <div id="map"><div class="loading" id="loading">Loading 279,878 NASA FIRMS detections…</div></div>
+        <div class="layers">
+          <label for="bm">Basemap
+            <select id="bm"><option value="bluemarble">Blue Marble relief</option><option value="blackmarble">Black Marble night lights</option><option value="none">None</option></select></label>
+          <label><input type="checkbox" id="l-fires" checked><span class="swatch" style="background:rgb(var(--dot))"></span>Hotspots in range</label>
+          <label><input type="checkbox" id="l-static"><span class="swatch" style="background:var(--static);border-radius:2px"></span>Static sources</label>
+          <label><input type="checkbox" id="l-borders" checked>Borders</label>
+        </div>
+        <div class="aoibar" style="border-top:1px solid var(--rule)">
+          <span class="eyebrow">Area of interest</span>
+          <strong id="aoi-name">Whole country</strong>
+          <span class="muted" id="aoi-detail" style="font-size:12.5px">All FIRMS detections assigned to Bangladesh</span>
+        </div>
+      </div>
+      <p class="caption" id="map-credit">Hotspots: NASA FIRMS (MODIS C6.1, VIIRS 375 m). Imagery: NASA GIBS. Borders: US Dept. of State LSIB, served by NASA GIBS.</p>
+    </aside>
+
+    <main class="col">
+      <section aria-labelledby="h-readout">
+        <div class="sechead"><div><span class="eyebrow">Selected month vs normal</span><h2 id="h-readout" style="margin-top:2px">How does this month compare?</h2></div>
+          <div class="field"><label for="baseline">Baseline years</label>
+            <select id="baseline"><option value="2003-2025">2003–2025, all reliable years</option><option value="2012-2025">2012–2025, VIIRS observed</option><option value="2003-2011">2003–2011, MODIS estimated</option></select></div>
+        </div>
+        <div class="panel readout" id="readout">
+          <div>
+            <div class="ro-month">
+              <button class="iconbtn" id="prev" aria-label="Previous month"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 5 8l5 5"/></svg></button>
+              <h3 id="ro-title">—</h3>
+              <button class="iconbtn" id="next" aria-label="Next month"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 3 5 5-5 5"/></svg></button>
+            </div>
+            <div class="big" id="ro-value">—</div>
+            <div id="ro-pill"></div>
+            <dl class="kv" id="ro-kv"></dl>
+          </div>
+          <div class="strip-wrap">
+            <div class="eyebrow" id="strip-title">Same month, baseline years</div>
+            <div class="chart" id="strip"></div>
+            <div class="strip-note" id="strip-note"></div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-cal">
+        <div class="sechead">
+          <div><span class="eyebrow">Burning-activity calendar</span><h2 id="h-cal" style="margin-top:2px">Hotspots by month and year</h2>
+            <p id="cal-sub">Each cell is one month. Click a cell to compare it with its baseline.</p></div>
+          <div class="seg" role="group" aria-label="Calendar colouring">
+            <button id="m-count" aria-pressed="true">Count</button><button id="m-anom" aria-pressed="false">vs normal</button>
+          </div>
+        </div>
+        <div class="cal-scroll"><div class="cal" id="cal" role="grid" aria-label="Monthly hotspot calendar"></div></div>
+        <div class="legend" id="legend"></div>
+      </section>
+
+      <section aria-labelledby="h-check">
+        <div class="sechead"><div><span class="eyebrow">Harmonization check, this area</span><h2 id="h-check" style="margin-top:2px">Do the sensors agree where they overlap?</h2>
+          <p>Annual hotspots in the selected area. The MODIS line is what the harmonized method would have estimated from MODIS alone; it is fitted on 2012–2021 and tested on 2022–2025.</p></div></div>
+        <div class="keyrow" id="check-key"></div>
+        <div class="chart" id="check"></div>
+        <div class="metric-line" id="check-metric"></div>
+      </section>
+
+      <section aria-labelledby="h-exp">
+        <div class="sechead"><div><span class="eyebrow">Export</span><h2 id="h-exp" style="margin-top:2px">Take the data with you</h2>
+          <p id="exp-sub">Files cover the selected area and date range.</p></div></div>
+        <div class="exports">
+          <button class="btn primary" id="x-pts">Hotspots CSV</button>
+          <button class="btn" id="x-cal">Monthly calendar CSV</button>
+          <span class="toast" id="toast" role="status"></span>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-method">
+        <div class="sechead"><div><span class="eyebrow">Method</span><h2 id="h-method" style="margin-top:2px">How the two records were joined</h2></div></div>
+        <div class="method">
+          <div>
+            <ol>
+              <li><strong>Filter.</strong> Keep detections FIRMS flags as presumed vegetation fire (type 0). Drop low confidence (MODIS &lt; 30, VIIRS “low”). Static land sources such as brick kilns and gas flares (type 2) and offshore detections (type 3) are kept out of the counts but stay in the export.</li>
+              <li><strong>Reference.</strong> VIIRS S-NPP 375 m is the reference series from February 2012. It sees smaller, cooler fires than MODIS at 1 km.</li>
+              <li><strong>Convert MODIS.</strong> Each MODIS detection gets a weight: the S-NPP-to-MODIS ratio for its season and 0.5° cell during 2012–2021, pulled toward the season-wide ratio where data are thin. Before Aqua (to June 2002) a Terra-only ratio is used.</li>
+              <li><strong>Carry forward.</strong> S-NPP stopped delivering on 2 November 2026. NOAA-20 is linked to S-NPP the same way, so new months can join the series.</li>
+              <li><strong>Uncertainty.</strong> Estimated months carry an 80% range from leave-one-year-out errors, which grows as counts shrink.</li>
+            </ol>
+          </div>
+          <div style="min-width:0">
+            <div class="eyebrow" style="margin-bottom:6px">Season ratios, S-NPP detections per MODIS detection</div>
+            <div class="tbl-wrap"><table id="t-ratio"></table></div>
+            <div class="eyebrow" style="margin:16px 0 6px">Leave-one-year-out test, 2012–2021</div>
+            <div class="tbl-wrap"><table id="t-cv"></table></div>
+            <p class="muted" style="font-size:12.5px;margin-top:8px" id="cv-note"></p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <span>Data: NASA FIRMS country yearly summaries, standard processing (MCD14ML C6.1; VNP14IMG and VJ114IMG v2), November 2000 to December 2025. Months from 2026 need near-real-time FIRMS data, which needs a FIRMS map key.</span>
+    <span>Built for the 2026 NASA Space Apps Challenge, “Harmonization of MODIS and VIIRS Hot Spots”.</span>
+  </footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+(async function(){
+const $=s=>document.querySelector(s);
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const NY=26, NM=NY*12;                 // months 2000-01 .. 2025-12
+const mi=(y,m)=>(y-2000)*12+(m-1);
+const yOf=i=>2000+Math.floor(i/12), mOf=i=>i%12+1;
+const FIRST=mi(2000,11), LAST=mi(2025,12), AQUA=mi(2002,7), SWITCH=mi(2012,2);
+const BBOX={s:20.4,w:87.8,n:26.8,e:93.0};
+const fmt=(v,d=0)=>v==null||isNaN(v)?'—':Number(v).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const era=i=>i<AQUA?0:(i<SWITCH?1:2);
+
+// ---------- load data ----------
+let meta,buf;
+try{
+  const [mr,br]=await Promise.all([fetch('meta.json'),fetch('points.gz.b64.txt')]);
+  if(!mr.ok||!br.ok) throw new Error('missing data files');
+  meta=await mr.json();
+  // points: gzip-compressed binary, base64-encoded so it can be served as text
+  const b64=(await br.text()).trim(); const bin=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+  buf=await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+}catch(err){ $('#loading').textContent='The hotspot data could not be loaded ('+err.message+'). Reload the page to try again.'; return; }
+const N=meta.n, LAY=meta.layout;
+const A=(name,T)=>new T(buf,LAY[name].offset,N);
+const P={lat:A('lat',Float32Array),lon:A('lon',Float32Array),frp:A('frp',Float32Array),e:A('e',Float32Array),
+  day:A('day',Uint16Array),time:A('time',Uint16Array),src:A('src',Uint8Array),conf:A('conf',Uint8Array),type:A('type',Uint8Array),flags:A('flags',Uint8Array)};
+// month index per point, series weight per point
+const dayMi=new Uint16Array(9800); { const t0=Date.UTC(2000,0,1); for(let d=0;d<9800;d++){const dt=new Date(t0+d*864e5); dayMi[d]=(dt.getUTCFullYear()-2000)*12+dt.getUTCMonth();} }
+P.mi=new Uint16Array(N); P.w=new Float32Array(N);
+for(let k=0;k<N;k++){const m=dayMi[P.day[k]]; P.mi[k]=m; const inc=P.flags[k]&2, s=P.src[k];
+  if(inc && ((s<=1&&m<SWITCH)||(s===2&&m>=SWITCH))) P.w[k]=P.e[k]; }
+
+// ---------- state ----------
+const S={aoi:{type:'all'},series:'harm',from:mi(2001,1),to:LAST,target:null,baseline:[2003,2025],mode:'count',agg:null};
+
+// ---------- uncertainty ----------
+function band(h,e){ if(e===2||h<=0) return [h,h];
+  const U=e===0?meta.uncertainty.terra_only_era:meta.uncertainty.modis_era; let b=0;
+  for(let j=0;j<U.bins.length;j++) if(h>=U.bins[j]) b=j;
+  const q=U.q10_q90_ratio[b]; return [h*q[0],h*q[1]]; }
+
+// ---------- AOI ----------
+function aoiTest(a){
+  if(a.type==='all') return null;
+  if(a.type==='rect'){const {s,w,n,e}=a; return k=>{const la=P.lat[k],lo=P.lon[k];return la>=s&&la<=n&&lo>=w&&lo<=e;};}
+  if(a.type==='circle'){const r=a.r, la0=a.lat, lo0=a.lon, c=Math.cos(la0*Math.PI/180);
+    const dla=r/111.32, dlo=r/(111.32*c);
+    return k=>{const dy=(P.lat[k]-la0)*111.32, dx=(P.lon[k]-lo0)*111.32*c; if(Math.abs(dy)>r||Math.abs(dx)>r) return false; return dx*dx+dy*dy<=r*r;};}
+  if(a.type==='poly'){const pts=a.pts; let s=90,n=-90,w=180,e=-180; for(const [la,lo] of pts){s=Math.min(s,la);n=Math.max(n,la);w=Math.min(w,lo);e=Math.max(e,lo);}
+    return k=>{const y=P.lat[k],x=P.lon[k]; if(y<s||y>n||x<w||x>e) return false; let inside=false;
+      for(let i=0,j=pts.length-1;i<pts.length;j=i++){const yi=pts[i][0],xi=pts[i][1],yj=pts[j][0],xj=pts[j][1];
+        if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;} return inside;};}
+}
+function aoiArea(a){
+  if(a.type==='rect') return (a.n-a.s)*111.32*(a.e-a.w)*111.32*Math.cos((a.n+a.s)/2*Math.PI/180);
+  if(a.type==='circle') return Math.PI*a.r*a.r;
+  if(a.type==='poly'){const p=a.pts; const lat0=p.reduce((t,q)=>t+q[0],0)/p.length, c=Math.cos(lat0*Math.PI/180); let s=0;
+    for(let i=0,j=p.length-1;i<p.length;j=i++) s+=(p[j][1]*c*111.32)*(p[i][0]*111.32)-(p[i][1]*c*111.32)*(p[j][0]*111.32); return Math.abs(s/2);}
+  return null;
+}
+
+// ---------- aggregation ----------
+function aggregate(){
+  const t=aoiTest(S.aoi); const g={H:new Float64Array(NM),MT:new Float64Array(NM),MA:new Float64Array(NM),VS:new Float64Array(NM),V1:new Float64Array(NM),
+    ME:new Float64Array(NM),NE:new Float64Array(NM),ST:new Float64Array(NM),idx:[]};
+  for(let k=0;k<N;k++){ if(t&&!t(k)) continue; g.idx.push(k); const m=P.mi[k];
+    if(P.type[k]===2){g.ST[m]++; continue;}
+    if(!(P.flags[k]&2)) continue;
+    g.H[m]+=P.w[k]; const s=P.src[k];
+    if(s===0){g.MT[m]++;g.ME[m]+=P.e[k];} else if(s===1){g.MA[m]++;g.ME[m]+=P.e[k];} else if(s===2) g.VS[m]++; else {g.V1[m]++; g.NE[m]+=P.e[k];}
+  }
+  g.idx=Uint32Array.from(g.idx); S.agg=g;
+}
+function avail(i){ if(i<FIRST||i>LAST) return false;
+  if(S.series==='snpp') return i>=mi(2012,1); if(S.series==='n20') return i>=mi(2018,4); return true; }
+function val(i){const g=S.agg; switch(S.series){case 'harm':return g.H[i];case 'modis':return g.MT[i]+g.MA[i];case 'snpp':return g.VS[i];default:return g.V1[i];}}
+function isEst(i){return S.series==='harm'&&era(i)<2;}
+function seriesLabel(){return {harm:'VIIRS-equivalent hotspots',modis:'MODIS detections',snpp:'VIIRS S-NPP detections',n20:'VIIRS NOAA-20 detections'}[S.series];}
+
+// baseline: same calendar month, baseline years, excluding the target year and Terra-only months
+function baselineVals(i){ const m=mOf(i), out=[];
+  for(let y=S.baseline[0];y<=S.baseline[1];y++){const j=mi(y,m); if(j===i||!avail(j)) continue; if(S.series==='harm'&&era(j)===0) continue;
+    if(S.series==='n20'&&y===2018) continue; if(S.series==='snpp'&&j<mi(2012,2)) continue; out.push({y,v:val(j)});}
+  return out; }
+function quant(a,q){ if(!a.length) return NaN; const s=[...a].sort((x,y)=>x-y); const p=(s.length-1)*q, lo=Math.floor(p), hi=Math.ceil(p); return s[lo]+(s[hi]-s[lo])*(p-lo); }
+function pctRank(v,arr){ if(!arr.length) return NaN; let lt=0,eq=0; for(const x of arr){ if(x<v-1e-9) lt++; else if(Math.abs(x-v)<=1e-9) eq++; } return (lt+0.5*eq)/arr.length; }
+const CLASSES=[{k:0,lab:'Far below normal',tok:'--d1',ic:'▼▼'},{k:1,lab:'Below normal',tok:'--d2',ic:'▼'},{k:2,lab:'Near normal',tok:'--d3',ic:'●'},{k:3,lab:'Above normal',tok:'--d4',ic:'▲'},{k:4,lab:'Far above normal',tok:'--d5',ic:'▲▲'}];
+function classOf(p){ if(isNaN(p)) return null; return p<0.10?0:p<0.33?1:p<=0.67?2:p<=0.90?3:4; }
+
+// ---------- colour scale for counts ----------
+function niceBreaks(maxv){
+  const nice=[1,2,3,5,10,20,30,50,100,200,300,500,1000,2000,3000,5000,10000,20000,30000,50000];
+  if(maxv<=1) return [0.5,1,1,1,1,1];
+  const out=[]; for(let j=1;j<=6;j++){const t=Math.pow(maxv,j/7); let b=nice.find(x=>x>=t)||t; if(out.length&&b<=out[out.length-1]) b=nice.find(x=>x>out[out.length-1])||b*2; out.push(b);} return out; }
+let BR=[];
+function countClass(v){ if(v<=0) return -1; for(let j=0;j<BR.length;j++) if(v<BR[j]) return j; return BR.length; }
+
+// ---------- map ----------
+const map=L.map('map',{crs:L.CRS.EPSG4326,zoomSnap:0.25,zoomDelta:0.5,zoomAnimation:false,fadeAnimation:false,markerZoomAnimation:false,attributionControl:false,
+  maxBounds:[[BBOX.s-1,BBOX.w-1.5],[BBOX.n+1,BBOX.e+1.5]],maxBoundsViscosity:0.8,worldCopyJump:false});
+map.fitBounds([[BBOX.s+0.1,BBOX.w+0.2],[BBOX.n-0.1,BBOX.e-0.1]]);
+map.setMinZoom(map.getZoom()-0.75); map.setMaxZoom(map.getZoom()+5);
+L.control.scale({imperial:false,position:'bottomleft'}).addTo(map);
+map.createPane('base').style.zIndex=200; map.createPane('borders').style.zIndex=250; map.createPane('fires').style.zIndex=350;
+const imgB=[[BBOX.s,BBOX.w],[BBOX.n,BBOX.e]];
+const baseLayers={bluemarble:L.imageOverlay('basemap/bluemarble.jpg',imgB,{pane:'base'}),blackmarble:L.imageOverlay('basemap/blackmarble.jpg',imgB,{pane:'base'})};
+const borders=L.imageOverlay('basemap/boundaries.png',imgB,{pane:'borders',opacity:.9});
+let baseMissing=false;
+for(const l of [...Object.values(baseLayers),borders]) l.on('error',()=>{ map.removeLayer(l); if(!baseMissing){baseMissing=true; $('#map-credit').textContent='Hotspots: NASA FIRMS (MODIS C6.1, VIIRS 375 m). Basemap imagery is not loaded in this build.';} });
+function setBase(){ for(const l of Object.values(baseLayers)) map.removeLayer(l); const v=$('#bm').value; if(baseLayers[v]) baseLayers[v].addTo(map);
+  if($('#l-borders').checked) borders.addTo(map); else map.removeLayer(borders); }
+setBase();
+
+const FireLayer=L.Layer.extend({
+  onAdd(m){ this._c=L.DomUtil.create('canvas','fires'); this._c.style.pointerEvents='none'; m.getPane('fires').appendChild(this._c); m.on('moveend zoomend resize viewreset',this.redraw,this); this.redraw(); },
+  onRemove(m){ L.DomUtil.remove(this._c); m.off('moveend zoomend resize viewreset',this.redraw,this); },
+  redraw(){ const m=this._map; if(!m||!S.agg) return; const c=this._c, sz=m.getSize(), dpr=Math.min(2,window.devicePixelRatio||1);
+    L.DomUtil.setPosition(c,m.containerPointToLayerPoint([0,0])); c.width=sz.x*dpr; c.height=sz.y*dpr; c.style.width=sz.x+'px'; c.style.height=sz.y+'px';
+    const x=c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,sz.x,sz.y);
+    const p0=m.latLngToContainerPoint([20,88]), p1=m.latLngToContainerPoint([27,93]);
+    const ax=(p1.x-p0.x)/5, bx=p0.x-ax*88, ay=(p1.y-p0.y)/7, by=p0.y-ay*20;
+    const z=m.getZoom()-m.getMinZoom(); const r=Math.max(1.4,Math.min(5,1.4+z*0.7));
+    const idx=S.agg.idx, fires=$('#l-fires').checked, stat=$('#l-static').checked;
+    if(fires){ const pick=[];
+      for(let j=0;j<idx.length;j++){const k=idx[j], i=P.mi[k]; if(i<S.from||i>S.to||P.type[k]!==0||!(P.flags[k]&2)) continue;
+        const s=P.src[k]; let on;
+        if(S.series==='harm') on=P.w[k]>0; else if(S.series==='modis') on=s<=1; else if(S.series==='snpp') on=s===2; else on=s===3;
+        if(!on) continue; const px=ax*P.lon[k]+bx, py=ay*P.lat[k]+by; if(px<-4||py<-4||px>sz.x+4||py>sz.y+4) continue; pick.push(px,py);}
+      // fade dots as more are drawn, so dense areas keep some texture
+      const alpha=Math.max(0.07,Math.min(0.7,2500/Math.max(1,pick.length/2))); x.fillStyle=`rgba(${css('--dot')},${alpha.toFixed(3)})`;
+      for(let j=0;j<pick.length;j+=2) x.fillRect(pick[j]-r/2,pick[j+1]-r/2,r,r); }
+    if(stat){ x.fillStyle=css('--static'); x.strokeStyle=css('--panel'); x.lineWidth=1; const rr=r+2.5;
+      for(let j=0;j<idx.length;j++){const k=idx[j], i=P.mi[k]; if(P.type[k]!==2||i<S.from||i>S.to) continue; const px=ax*P.lon[k]+bx, py=ay*P.lat[k]+by;
+        x.fillRect(px-rr/2,py-rr/2,rr,rr); x.strokeRect(px-rr/2,py-rr/2,rr,rr);} }
+  }});
+const fireLayer=new FireLayer().addTo(map);
+
+// ---------- AOI drawing ----------
+let aoiShape=null, draw=null; const shapeStyle=()=>({color:css('--ink'),weight:2,dashArray:'6 4',fillColor:css('--accent'),fillOpacity:.06,interactive:false});
+function setPressed(id){ for(const b of ['#b-all','#b-rect','#b-poly','#b-circ']) $(b).setAttribute('aria-pressed',b===id?'true':'false'); }
+function hint(t){ const h=$('#hint'); if(t){h.innerHTML=t;h.hidden=false;} else h.hidden=true; }
+function clearDraw(){ if(draw){ for(const l of draw.layers) map.removeLayer(l); map.off('click',draw.onClick); map.off('mousemove',draw.onMove); map.off('dblclick',draw.onDbl); }
+  draw=null; map.getContainer().classList.remove('drawing'); map.doubleClickZoom.enable(); }
+function setAOI(a,fit){ clearDraw(); hint(''); S.aoi=a; if(aoiShape){map.removeLayer(aoiShape);aoiShape=null;}
+  if(a.type==='rect') aoiShape=L.rectangle([[a.s,a.w],[a.n,a.e]],shapeStyle());
+  if(a.type==='poly') aoiShape=L.polygon(a.pts,shapeStyle());
+  if(a.type==='circle') aoiShape=L.circle([a.lat,a.lon],{radius:a.r*1000,...shapeStyle()});
+  if(aoiShape){ aoiShape.addTo(map); if(fit) map.fitBounds(aoiShape.getBounds().pad(0.35)); }
+  else if(fit) map.fitBounds([[BBOX.s+0.1,BBOX.w+0.2],[BBOX.n-0.1,BBOX.e-0.1]]);
+  setPressed(a.type==='all'?'#b-all':a.type==='rect'?'#b-rect':a.type==='poly'?'#b-poly':'#b-circ');
+  if(a.type!=='circle') $('#circlebox').hidden=true;
+  const area=aoiArea(a); let name, det;
+  if(a.type==='all'){name='Whole country';det='All FIRMS detections assigned to Bangladesh';}
+  else if(a.type==='rect'){name=a.label||'Drawn box';det=`${a.s.toFixed(2)}–${a.n.toFixed(2)}°N, ${a.w.toFixed(2)}–${a.e.toFixed(2)}°E · ${fmt(area)} km²`;}
+  else if(a.type==='poly'){name='Drawn shape';det=`${a.pts.length} vertices · ${fmt(area)} km²`;}
+  else {name='Point + radius';det=`${a.r} km around ${a.lat.toFixed(3)}°N, ${a.lon.toFixed(3)}°E · ${fmt(area)} km²`;}
+  $('#aoi-name').textContent=name; $('#aoi-detail').textContent=det+(a.type!=='all'?' · Bangladesh detections only':'');
+  refresh(true);
+}
+function startRect(){ clearDraw(); setPressed('#b-rect'); $('#circlebox').hidden=true; map.getContainer().classList.add('drawing');
+  hint('Click one corner of the box, then click the opposite corner. Press Esc to cancel.');
+  const st={layers:[],a:null};
+  st.onClick=e=>{ if(!st.a){st.a=e.latlng; const r=L.rectangle([st.a,st.a],shapeStyle()).addTo(map); st.layers.push(r); st.rect=r; hint('Now click the opposite corner.'); }
+    else { const b=L.latLngBounds(st.a,e.latlng); if(Math.abs(b.getNorth()-b.getSouth())<0.005||Math.abs(b.getEast()-b.getWest())<0.005) return;
+      setAOI({type:'rect',s:b.getSouth(),w:b.getWest(),n:b.getNorth(),e:b.getEast()},false);} };
+  st.onMove=e=>{ if(st.rect) st.rect.setBounds(L.latLngBounds(st.a,e.latlng)); };
+  map.on('click',st.onClick); map.on('mousemove',st.onMove); draw=st; }
+function startPoly(){ clearDraw(); setPressed('#b-poly'); $('#circlebox').hidden=true; map.getContainer().classList.add('drawing'); map.doubleClickZoom.disable();
+  hint('Click to add corners. Double-click, click the first corner, or <button class="btn" id="finish" style="min-height:26px;padding:2px 8px">Finish shape</button> to close it. Esc cancels.');
+  const st={layers:[],pts:[]}; const line=L.polyline([],{...shapeStyle(),fill:false}).addTo(map); const ghost=L.polyline([],{...shapeStyle(),fill:false,opacity:.5}).addTo(map); st.layers.push(line,ghost);
+  const finish=()=>{ if(st.pts.length>=3) setAOI({type:'poly',pts:st.pts.map(p=>[p.lat,p.lng])},false); };
+  st.onClick=e=>{ if(st.pts.length>=3){ const a=map.latLngToContainerPoint(st.pts[0]), b=map.latLngToContainerPoint(e.latlng); if(a.distanceTo(b)<12){finish();return;} }
+    st.pts.push(e.latlng); line.setLatLngs(st.pts); const v=L.circleMarker(e.latlng,{radius:3.5,color:css('--ink'),weight:1.5,fillColor:css('--panel'),fillOpacity:1,interactive:false}).addTo(map); st.layers.push(v); };
+  st.onMove=e=>{ if(st.pts.length) ghost.setLatLngs([st.pts[st.pts.length-1],e.latlng,st.pts[0]]); };
+  st.onDbl=e=>{ L.DomEvent.stop(e); finish(); };
+  map.on('click',st.onClick); map.on('mousemove',st.onMove); map.on('dblclick',st.onDbl); draw=st;
+  const fb=$('#finish'); if(fb) fb.onclick=finish; }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&draw){ clearDraw(); hint(''); setPressed(S.aoi.type==='all'?'#b-all':S.aoi.type==='rect'?'#b-rect':S.aoi.type==='poly'?'#b-poly':'#b-circ'); }});
+$('#b-all').onclick=()=>{ $('#preset').value=''; setAOI({type:'all'},true); };
+$('#b-rect').onclick=()=>{ $('#preset').value=''; startRect(); };
+$('#b-poly').onclick=()=>{ $('#preset').value=''; startPoly(); };
+$('#b-circ').onclick=()=>{ clearDraw(); hint(''); $('#preset').value=''; setPressed('#b-circ'); $('#circlebox').hidden=false; };
+$('#c-pick').onclick=()=>{ clearDraw(); map.getContainer().classList.add('drawing'); hint('Click the map to set the centre point.');
+  const st={layers:[]}; st.onClick=e=>{ $('#c-lat').value=e.latlng.lat.toFixed(3); $('#c-lon').value=e.latlng.lng.toFixed(3); clearDraw(); hint(''); applyCircle(); }; map.on('click',st.onClick); draw=st; };
+function applyCircle(){ const la=+$('#c-lat').value, lo=+$('#c-lon').value, r=+$('#c-r').value;
+  if(!(la>=20&&la<=27&&lo>=88&&lo<=93)){ hint('Enter a centre inside 20–27°N and 88–93°E.'); return; }
+  if(!(r>=1&&r<=300)){ hint('Enter a radius between 1 and 300 km.'); return; }
+  setAOI({type:'circle',lat:la,lon:lo,r},true); $('#circlebox').hidden=false; }
+$('#c-apply').onclick=applyCircle;
+const PRESETS={cht:{s:21.15,n:23.75,w:91.85,e:92.70,label:'Chittagong Hill Tracts (approx.)'},sund:{s:21.6,n:22.45,w:89.0,e:89.95,label:'Sundarbans (approx.)'},
+  haor:{s:24.2,n:25.2,w:90.9,e:91.9,label:'Sylhet haor basin (approx.)'},barind:{s:24.3,n:25.3,w:88.1,e:89.2,label:'Barind tract (approx.)'},dhaka:{s:23.62,n:23.80,w:90.38,e:90.55,label:'Dhaka east fringe, Matuail (approx.)'}};
+$('#preset').onchange=e=>{ const p=PRESETS[e.target.value]; if(p) setAOI({type:'rect',...p},true); };
+$('#bm').onchange=setBase; $('#l-borders').onchange=setBase; $('#l-fires').onchange=()=>fireLayer.redraw(); $('#l-static').onchange=()=>fireLayer.redraw();
+
+// ---------- controls ----------
+function parseMonth(v){ const [y,m]=v.split('-').map(Number); return mi(y,m); }
+function onRange(){ let f=parseMonth($('#from').value||'2001-01'), t=parseMonth($('#to').value||'2025-12'); f=Math.max(FIRST,Math.min(LAST,f)); t=Math.max(FIRST,Math.min(LAST,t)); if(f>t){const x=f;f=t;t=x;}
+  S.from=f; S.to=t; if(S.target<f||S.target>t) S.target=null; refresh(false); }
+$('#from').onchange=onRange; $('#to').onchange=onRange;
+$('#series').onchange=e=>{ S.series=e.target.value; refresh(false); };
+$('#baseline').onchange=e=>{ S.baseline=e.target.value.split('-').map(Number); renderCalendar(); renderReadout(); };
+$('#m-count').onclick=()=>{S.mode='count';$('#m-count').setAttribute('aria-pressed','true');$('#m-anom').setAttribute('aria-pressed','false');renderCalendar();};
+$('#m-anom').onclick=()=>{S.mode='anom';$('#m-anom').setAttribute('aria-pressed','true');$('#m-count').setAttribute('aria-pressed','false');renderCalendar();};
+$('#prev').onclick=()=>step(-1); $('#next').onclick=()=>step(1);
+function step(d){ let i=S.target+d; while(i>=S.from&&i<=S.to&&!avail(i)) i+=d; if(i>=S.from&&i<=S.to){S.target=i; renderReadout(); markSel();} }
+
+// ---------- tooltip ----------
+const tip=$('#tip');
+function showTip(html,ev){ tip.innerHTML=html; tip.hidden=false; const pad=14, w=tip.offsetWidth, h=tip.offsetHeight; let x=ev.clientX+pad, y=ev.clientY+pad;
+  if(x+w>innerWidth-8) x=ev.clientX-w-pad; if(y+h>innerHeight-8) y=ev.clientY-h-pad; tip.style.left=Math.max(8,x)+'px'; tip.style.top=Math.max(8,y)+'px'; }
+function hideTip(){ tip.hidden=true; }
+const row=(a,b)=>`<div class="r"><span>${a}</span><span>${b}</span></div>`;
+function cellTip(i){ const g=S.agg, v=val(i), e=era(i); let h=`<div class="t">${MONL[mOf(i)-1]} ${yOf(i)}</div>`;
+  if(!avail(i)) return h+'<div class="muted">No data from this sensor for this month.</div>';
+  h+=row(seriesLabel(), (isEst(i)?'≈':'')+fmt(v));
+  if(isEst(i)){ const [lo,hi]=band(v,e); h+=row('80% range',`${fmt(lo)}–${fmt(hi)}`); h+=row('From MODIS',`${fmt(g.MA[i])} Aqua · ${fmt(g.MT[i])} Terra`); h+=`<div class="muted" style="margin-top:3px">${e===0?'Terra-only period: low confidence, left out of baselines.':'Estimated from MODIS.'}</div>`; }
+  else { h+=row('MODIS raw',fmt(g.MA[i]+g.MT[i])); h+=row('S-NPP raw',i>=mi(2012,1)?fmt(g.VS[i]):'—'); h+=row('NOAA-20 raw',i>=mi(2018,4)?fmt(g.V1[i]):'—'); }
+  if(g.ST[i]) h+=row('Static sources',fmt(g.ST[i]));
+  const b=baselineVals(i).map(o=>o.v); if(b.length&&!(S.series==='harm'&&e===0)){ const p=pctRank(v,b), c=classOf(p); h+=`<div class="r" style="margin-top:4px"><span>vs ${MON[mOf(i)-1]} median ${fmt(quant(b,.5))}</span><span>${CLASSES[c].lab}</span></div>`; }
+  return h; }
+
+// ---------- calendar ----------
+let cellEls=new Map();
+function renderCalendar(){
+  const cal=$('#cal'); cal.innerHTML=''; cellEls=new Map(); const g=S.agg;
+  const y0=yOf(S.from), y1=yOf(S.to);
+  let maxv=0; for(let i=S.from;i<=S.to;i++) if(avail(i)) maxv=Math.max(maxv,val(i)); BR=niceBreaks(maxv);
+  const seq=['--s1','--s2','--s3','--s4','--s5','--s6','--s7'].map(css); const div=['--d1','--d2','--d3','--d4','--d5'].map(css);
+  const head=['','',...MON.map(m=>m[0]),'Year total'];
+  head.forEach((t,j)=>{ const d=document.createElement('div'); d.className='hd'+(j===14?' tot':''); d.textContent=t; if(j>=2&&j<14) d.title=MON[j-2]; cal.appendChild(d); });
+  // annual totals
+  const tots=[]; let tmax=0;
+  for(let y=y0;y<=y1;y++){ let h=0,lo=0,hi=0,est=false,any=false; for(let m=1;m<=12;m++){const i=mi(y,m); if(i<S.from||i>S.to||!avail(i)) continue; any=true; const v=val(i); h+=v;
+      if(isEst(i)){ est=true; const [a,b]=band(v,era(i)); lo+=a; hi+=b; } else {lo+=v;hi+=v;} }
+    const t0=S.series==='harm'&&y<=2002; tots.push({y,h,lo,hi,est,any,t0}); if(!t0) tmax=Math.max(tmax,hi); }
+  if(!tmax) tmax=Math.max(1,...tots.map(T=>T.hi));
+  for(const T of tots){ const y=T.y;
+    const yl=document.createElement('div'); yl.className='yr'; yl.textContent=y; cal.appendChild(yl);
+    const er=document.createElement('div'); const e0=era(mi(y,6)); const eLab=S.series!=='harm'?2:(y<=2002?0:y<=2011?1:2);
+    er.className='era era-'+eLab; er.title=eLab===0?'Terra-only, low confidence':eLab===1?'Estimated from MODIS':'Observed'; cal.appendChild(er);
+    for(let m=1;m<=12;m++){ const i=mi(y,m); const b=document.createElement('button'); b.className='cell'; b.type='button';
+      if(!avail(i)){ b.classList.add('na'); b.disabled=true; b.setAttribute('aria-label',`${MONL[m-1]} ${y}: no data`); }
+      else { const v=val(i);
+        if(S.mode==='count'){ const c=countClass(v); b.style.background=c<0?'':seq[Math.min(c,6)]; }
+        else { const bv=baselineVals(i).map(o=>o.v); const c=(S.series==='harm'&&era(i)===0)?null:classOf(pctRank(v,bv)); b.style.background=c==null?'':div[c]; }
+        if(S.series==='harm'&&era(i)===0) b.classList.add('t0');
+        b.setAttribute('aria-label',`${MONL[m-1]} ${y}: ${isEst(i)?'about ':''}${fmt(v)} ${seriesLabel()}`);
+        b.onmousemove=ev=>showTip(cellTip(i),ev); b.onmouseleave=hideTip;
+        b.onclick=()=>{ S.target=i; renderReadout(); markSel(); };
+      }
+      if(i<S.from||i>S.to) b.classList.add('out');
+      cal.appendChild(b); cellEls.set(i,b); }
+    const t=document.createElement('div'); t.className='tot';
+    const cl=v=>Math.min(100,tmax>0?v/tmax*100:0); const w=cl(T.h), wl=cl(T.lo), wh=cl(T.hi), over=T.h>tmax;
+    t.innerHTML=`<span class="bar"><i class="${T.est?'est':''}" style="width:${w}%;${over?'border-radius:0;background-image:repeating-linear-gradient(135deg,var(--hatch) 0 1.5px,transparent 1.5px 5px)':''}"></i>${T.est&&wh>wl?`<b style="left:${wl}%;width:${Math.max(0,wh-wl)}%"></b>`:''}</span><span class="v">${T.any?(T.est?'≈':'')+fmt(T.h):'—'}</span>`;
+    t.onmousemove=ev=>showTip(`<div class="t">${y} total</div>${row(seriesLabel(),(T.est?'≈':'')+fmt(T.h))}${T.est?row('80% range',fmt(T.lo)+'–'+fmt(T.hi)):''}${T.t0?'<div class="muted" style="margin-top:3px">Terra-only months: low confidence. Bar not to scale.</div>':''}`,ev); t.onmouseleave=hideTip;
+    cal.appendChild(t); }
+  // median row
+  const ml=document.createElement('div'); ml.className='medlab'; ml.textContent='median'; cal.appendChild(ml);
+  for(let m=1;m<=12;m++){ const vals=[]; for(let y=S.baseline[0];y<=S.baseline[1];y++){const i=mi(y,m); if(avail(i)&&!(S.series==='harm'&&era(i)===0)) vals.push(val(i));}
+    const d=document.createElement('div'); d.className='medrow'; const q=quant(vals,.5); d.textContent=isNaN(q)?'—':(q>=1000?fmt(q/1000,1)+'k':fmt(q)); d.title=`${MONL[m-1]} median, ${S.baseline[0]}–${S.baseline[1]}: ${fmt(q)}`; cal.appendChild(d); }
+  const blank=document.createElement('div'); blank.className='medrow'; blank.style.textAlign='left'; blank.textContent=`${S.baseline[0]}–${S.baseline[1]}`; cal.appendChild(blank);
+  markSel(); renderLegend(seq,div);
+}
+function markSel(){ for(const [i,el] of cellEls) el.classList.toggle('sel',i===S.target); }
+function renderLegend(seq,div){
+  const lg=$('#legend'); let h='';
+  if(S.mode==='count'){ const labs=['>0',...BR.map(b=>b>=1000?fmt(b/1000,b%1000?1:0)+'k':fmt(b))];
+    h+=`<div class="ramp"><span class="eyebrow" style="font-size:10px">${seriesLabel()} per month</span><div class="sw">${seq.map(c=>`<span style="background:${c}"></span>`).join('')}</div><div class="lb">${labs.map(l=>`<span>${l}</span>`).join('')}</div></div>`; }
+  else h+=`<div class="ramp"><span class="eyebrow" style="font-size:10px">Rank among the same month in baseline years</span><div class="sw">${div.map(c=>`<span style="background:${c}"></span>`).join('')}</div><div class="lb"><span>&lt;P10</span><span>P10</span><span>P33–67</span><span>P90</span><span>&gt;P90</span></div></div>`;
+  h+=`<span class="lg-item"><span class="lg-box" style="background:var(--s0)"></span>No hotspots</span>`;
+  h+=`<span class="lg-item"><span class="lg-box" style="background:transparent;outline:1px dashed var(--rule-strong);outline-offset:-1px"></span>No sensor data</span>`;
+  if(S.series==='harm'){ h+=`<span class="lg-item"><span class="lg-box" style="background:var(--s3)"><span style="position:absolute;inset:0;border-radius:2px;background:repeating-linear-gradient(135deg,var(--hatch) 0 1.5px,transparent 1.5px 5px)"></span></span>Terra-only, low confidence</span>`;
+    h+=`<span class="lg-item"><span style="width:6px;height:12px;display:inline-block" class="era-1"></span>Estimated from MODIS <span style="width:6px;height:12px;display:inline-block;margin-left:8px" class="era-2"></span>Observed by VIIRS</span>`;
+    h+=`<span class="lg-item"><span style="width:22px;height:2px;background:var(--ink);opacity:.55;display:inline-block"></span>80% range on estimated totals</span>`; }
+  lg.innerHTML=h; }
+
+// ---------- readout ----------
+function renderReadout(){
+  if(S.target==null||!avail(S.target)){ // default: latest available month in range
+    let i=S.to; while(i>=S.from&&!avail(i)) i--; S.target=i; }
+  const i=S.target, v=val(i), e=era(i);
+  $('#ro-title').textContent=`${MON[mOf(i)-1]} ${yOf(i)}`;
+  $('#prev').disabled=i<=S.from; $('#next').disabled=i>=S.to;
+  const est=isEst(i); const [lo,hi]=band(v,e);
+  $('#ro-value').innerHTML=`${est?'≈':''}${fmt(v)} <small>${seriesLabel()}</small>`;
+  const bl=baselineVals(i), bv=bl.map(o=>o.v), terraOnly=S.series==='harm'&&e===0;
+  const p=pctRank(v,bv), c=terraOnly?null:classOf(p);
+  if(c!=null){ const C=CLASSES[c]; const col=css(C.tok);
+    $('#ro-pill').innerHTML=`<span class="pill" style="border-color:${col};background:color-mix(in srgb,${col} 18%,transparent)"><span aria-hidden="true" style="font-size:10px;letter-spacing:-1px">${C.ic}</span>${C.lab}</span>`; }
+  else $('#ro-pill').innerHTML=`<span class="pill" style="border-color:var(--rule-strong)">${terraOnly?'Low confidence, not ranked':'No baseline'}</span>`;
+  const med=quant(bv,.5), p10=quant(bv,.1), p90=quant(bv,.9);
+  let kv=''; if(est) kv+=`<dt>80% range</dt><dd>${fmt(lo)}–${fmt(hi)}</dd>`;
+  kv+=`<dt>${MON[mOf(i)-1]} median</dt><dd>${fmt(med)}</dd><dt>Typical range</dt><dd>${fmt(p10)}–${fmt(p90)} <span class="muted">(P10–P90)</span></dd>`;
+  if(!isNaN(p)) kv+=`<dt>Rank</dt><dd>higher than ${bv.filter(x=>x<v-1e-9).length} of ${bv.length} baseline years</dd>`;
+  kv+=`<dt>Source</dt><dd style="font-family:var(--f-body)">${S.series!=='harm'?'Raw sensor counts':e===0?'MODIS Terra only, converted':e===1?'MODIS Terra + Aqua, converted':'VIIRS S-NPP, observed'}</dd>`;
+  $('#ro-kv').innerHTML=kv;
+  $('#strip-title').textContent=`${MONL[mOf(i)-1]}s, ${S.baseline[0]}–${S.baseline[1]}`;
+  renderStrip(bl,v,i);
+}
+function renderStrip(bl,v,i){
+  const el=$('#strip'); const W=Math.max(240,el.clientWidth||300), H=104, ml=8, mr=12, top=18, axisY=70;
+  const vals=bl.map(o=>o.v).concat([v]); const maxv=Math.max(1,...vals)*1.05;
+  const x=t=>ml+(W-ml-mr)*(t/maxv);
+  const med=quant(bl.map(o=>o.v),.5), p10=quant(bl.map(o=>o.v),.1), p90=quant(bl.map(o=>o.v),.9);
+  // stack dots to avoid overlap
+  const sorted=[...bl].sort((a,b)=>a.v-b.v); const placed=[]; let svgDots='';
+  for(const o of sorted){ const cx=x(o.v); let lvl=0; while(placed.some(p=>p.l===lvl&&Math.abs(p.x-cx)<9)) lvl++; placed.push({x:cx,l:lvl});
+    const cy=axisY-12-lvl*9; svgDots+=`<circle cx="${cx}" cy="${Math.max(top,cy)}" r="4" fill="var(--rule-strong)" stroke="var(--panel)" stroke-width="1.5"><title>${o.y}: ${fmt(o.v)}</title></circle>`; }
+  const ticks=niceTicks(0,maxv,4);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Distribution of baseline years for this month">`;
+  if(!isNaN(p10)) s+=`<rect x="${x(p10)}" y="${axisY-4}" width="${Math.max(1,x(p90)-x(p10))}" height="8" fill="var(--rule)" rx="2"/>`;
+  s+=`<line x1="${ml}" x2="${W-mr}" y1="${axisY}" y2="${axisY}" stroke="var(--rule-strong)"/>`;
+  for(const t of ticks) s+=`<line x1="${x(t)}" x2="${x(t)}" y1="${axisY}" y2="${axisY+4}" stroke="var(--rule-strong)"/><text x="${x(t)}" y="${axisY+16}" text-anchor="middle">${t>=1000?fmt(t/1000,t%1000?1:0)+'k':fmt(t)}</text>`;
+  s+=svgDots;
+  if(!isNaN(med)) s+=`<line x1="${x(med)}" x2="${x(med)}" y1="${top-6}" y2="${axisY+4}" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="3 2"/><text class="lbl" x="${x(med)}" y="${top-9}" text-anchor="${x(med)>W*0.8?'end':'middle'}">median</text>`;
+  const tx=x(v); s+=`<path d="M${tx} ${axisY-9} l7 9 l-7 9 l-7 -9 z" fill="var(--accent)" stroke="var(--panel)" stroke-width="1.5"><title>${MON[mOf(i)-1]} ${yOf(i)}: ${fmt(v)}</title></path>`;
+  s+=`<text class="lbl" x="${tx}" y="${H-2}" text-anchor="${tx<W*0.15?'start':tx>W*0.85?'end':'middle'}" style="fill:var(--accent-ink);font-weight:500">${yOf(i)}</text></svg>`;
+  el.innerHTML=s;
+  $('#strip-note').textContent=bl.length?`Grey dots are the other ${bl.length} years; the band spans P10–P90.`:'No baseline years available for this series and month.';
+}
+function niceTicks(a,b,n){ const span=b-a; if(span<=0) return [a]; const st=Math.pow(10,Math.floor(Math.log10(span/n))); const err=span/n/st; const mult=err>=7.5?10:err>=3.5?5:err>=1.5?2:1; const s=st*mult; const out=[]; for(let t=Math.ceil(a/s)*s;t<=b+1e-9;t+=s) out.push(+t.toFixed(6)); return out; }
+
+// ---------- harmonization check chart ----------
+function renderCheck(){
+  const g=S.agg, years=[]; for(let y=2012;y<=2025;y++) years.push(y);
+  const sum=(arr,y)=>{let s=0; for(let m=(y===2012?2:1);m<=12;m++) s+=arr[mi(y,m)]; return s;};
+  const obs=years.map(y=>sum(g.VS,y)), mod=years.map(y=>sum(g.ME,y)), n20=years.map(y=>y>=2019?sum(g.NE,y):null);
+  const el=$('#check'); const W=Math.max(300,el.clientWidth||600), H=Math.round(Math.min(280,Math.max(200,W*0.38))), ml=48, mr=14, mt=14, mb=28;
+  const maxv=Math.max(1,...obs,...mod,...n20.filter(v=>v!=null))*1.08; const ticks=niceTicks(0,maxv,4);
+  const x=j=>ml+(W-ml-mr)*(j/(years.length-1)), y=v=>mt+(H-mt-mb)*(1-v/maxv);
+  const c1=css('--c1'), c2=css('--c2'), c3=css('--c3');
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Annual hotspots 2012 to 2025 by sensor">`;
+  const xs=x(years.indexOf(2022))-(x(1)-x(0))/2;
+  s+=`<rect x="${xs}" y="${mt}" width="${W-mr-xs}" height="${H-mt-mb}" fill="var(--rule)" opacity=".45"/>`;
+  s+=`<text x="${xs+6}" y="${mt+12}">not used in fitting</text>`;
+  for(const t of ticks){ s+=`<line x1="${ml}" x2="${W-mr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--rule)"/><text x="${ml-6}" y="${y(t)+4}" text-anchor="end">${t>=1000?fmt(t/1000,t%1000?1:0)+'k':fmt(t)}</text>`; }
+  years.forEach((yy,j)=>{ if(W<480&&j%2) return; s+=`<text x="${x(j)}" y="${H-8}" text-anchor="middle">${W<480?"'"+String(yy).slice(2):yy}</text>`; });
+  const path=(arr,col,dash)=>{ let d=''; arr.forEach((v,j)=>{ if(v==null) return; d+=(d?'L':'M')+x(j).toFixed(1)+' '+y(v).toFixed(1); }); return `<path d="${d}" fill="none" stroke="${col}" stroke-width="2" ${dash?`stroke-dasharray="${dash}"`:''} stroke-linejoin="round"/>`; };
+  s+=path(n20,c3)+path(mod,c2,'5 3')+path(obs,c1);
+  const dots=(arr,col)=>arr.map((v,j)=>v==null?'':`<circle cx="${x(j)}" cy="${y(v)}" r="3.5" fill="${col}" stroke="var(--bg)" stroke-width="2"/>`).join('');
+  s+=dots(n20,c3)+dots(mod,c2)+dots(obs,c1);
+  // hover columns
+  years.forEach((yy,j)=>{ const w=(W-ml-mr)/(years.length-1); s+=`<rect class="hov" data-j="${j}" x="${x(j)-w/2}" y="${mt}" width="${w}" height="${H-mt-mb}" fill="transparent"/>`; });
+  s+='</svg>'; el.innerHTML=s;
+  el.querySelectorAll('.hov').forEach(r=>{ const j=+r.dataset.j; r.onmousemove=ev=>showTip(`<div class="t">${years[j]}${years[j]===2012?' (Feb–Dec)':''}</div>${row('S-NPP observed',fmt(obs[j]))}${row('MODIS-based estimate',fmt(mod[j]))}${row('NOAA-20-based estimate',n20[j]==null?'—':fmt(n20[j]))}${years[j]>=2022?'<div class="muted" style="margin-top:3px">Not used in fitting</div>':''}`,ev); r.onmouseleave=hideTip; });
+  $('#check-key').innerHTML=`<span><i style="background:${c1}"></i>VIIRS S-NPP, observed</span><span><i style="background:repeating-linear-gradient(90deg,${c2} 0 5px,transparent 5px 8px)"></i>Estimate from MODIS</span><span><i style="background:${c3}"></i>Estimate from NOAA-20</span>`;
+  const err=(a,b,from,to)=>{ let num=0,den=0; years.forEach((yy,j)=>{ if(yy<from||yy>to||a[j]==null) return; num+=Math.abs(a[j]-b[j]); den+=b[j]; }); return den>0?num/den:NaN; };
+  const eIn=err(mod,obs,2012,2021), eOut=err(mod,obs,2023,2025), eN=err(n20,obs,2019,2025), tot=obs.reduce((a,b)=>a+b,0);
+  $('#check-metric').innerHTML = tot<30 ? '<span class="muted">Too few VIIRS hotspots in this area for a meaningful check. Try a larger area.</span>' :
+    `Annual error of the MODIS-based estimate here: <span class="num">${fmt(eIn*100)}%</span> in 2012–2021, <span class="num">${fmt(eOut*100)}%</span> in 2023–2025. NOAA-20 vs S-NPP: <span class="num">${fmt(eN*100)}%</span>. 2022 is left out of the second figure because MODIS Aqua recorded far fewer spring hotspots that year than either VIIRS sensor.`;
+}
+
+// ---------- method tables ----------
+function renderMethod(){
+  const sr=meta.season_ratio_modis, st=meta.season_ratio_terra_only, sn=meta.season_ratio_noaa20;
+  const order=[['NovFeb','Nov–Feb'],['Mar','Mar'],['Apr','Apr'],['May','May'],['JunOct','Jun–Oct']];
+  $('#t-ratio').innerHTML=`<thead><tr><th>Season</th><th>MODIS T+A</th><th>Terra only</th><th>NOAA-20</th></tr></thead><tbody>${order.map(([k,l])=>`<tr><td>${l}</td><td>${fmt(sr[k],2)}</td><td>${fmt(st[k],1)}</td><td>${fmt(sn[k],2)}</td></tr>`).join('')}</tbody>`;
+  const mc=meta.validation.model_comparison; const rows=[['single_global_ratio','One national ratio'],['seasonal_ratio','Ratio by season'],['seasonal_x_cell_shrinkage (chosen)','Season × 0.5° cell, shrunk (used)'],['terra_only_seasonal_x_cell','Terra only (2000–02 method)']];
+  $('#t-cv').innerHTML=`<thead><tr><th>Method</th><th>National monthly error</th><th>Cell-month error</th><th>Cell annual rank ρ</th></tr></thead><tbody>${rows.map(([k,l])=>{const r=mc[k]; return `<tr class="${k.includes('chosen')?'chosen':''}"><td>${l}</td><td>${fmt(r.national_month_median_abs_pct_err*100)}%</td><td>${fmt(r.cell_month_WAPE*100)}%</td><td>${fmt(r.cell_annual_spearman,2)}</td></tr>`;}).join('')}</tbody>`;
+  const u=meta.uncertainty.modis_era, d=meta.validation.drift_test;
+  $('#cv-note').textContent=`National monthly error is the median absolute error over months with at least 50 hotspots. The 80% ranges contained the observed value ${fmt(u.coverage_80*100)}% of the time in testing. Applied to years it never saw, the MODIS-based estimate came within ${fmt(Math.max(...['2023','2024','2025'].map(k=>Math.abs(d[k].ratio-1)))*100)}% of S-NPP in 2023–2025, while the Terra and Aqua overpasses drifted by up to an hour. 2022 came in at ${fmt(d['2022'].ratio*100)}% of S-NPP.`;
+}
+
+// ---------- exports ----------
+let dlP=null; function downloadsApi(){ if(!dlP) dlP=(window.claude&&window.claude.use)?window.claude.use('downloads').catch(()=>null):Promise.resolve(null); return dlP; }
+async function saveFile(name,text){ const toast=$('#toast'); toast.textContent='Preparing '+name+'…';
+  const blob=new Blob([text],{type:'text/csv'}); const api=await downloadsApi();
+  if(api){ try{ await api.save({filename:name,data:blob}); toast.textContent='Saved '+name+'.'; } catch(e){ toast.textContent=e&&e.code==='declined'?'Download cancelled.':'This view cannot save files ('+(e&&e.code||'unavailable')+').'; } return; }
+  if(window.claude){ toast.textContent='This view cannot save files.'; return; }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000); toast.textContent='Saved '+name+'.'; }
+const slug=()=>({all:'bangladesh',rect:'box',poly:'shape',circle:'radius'})[S.aoi.type];
+const ymStr=i=>`${yOf(i)}${String(mOf(i)).padStart(2,'0')}`;
+$('#x-pts').onclick=()=>{ const g=S.agg, SRC=['MODIS','MODIS','VIIRS','VIIRS'], SAT=['Terra','Aqua','Suomi-NPP','NOAA-20'], TYP=['presumed vegetation fire','active volcano','other static land source','offshore'];
+  const lines=['sensor,satellite,acq_date,acq_time_utc,latitude,longitude,confidence,frp_mw,fire_type,day_night,counted_in_series,snpp_equivalent_weight,series_period'];
+  const t0=Date.UTC(2000,0,1);
+  for(let j=0;j<g.idx.length;j++){ const k=g.idx[j], i=P.mi[k]; if(i<S.from||i>S.to) continue; const s=P.src[k], cf=P.conf[k];
+    const date=new Date(t0+P.day[k]*864e5).toISOString().slice(0,10); const tm=String(P.time[k]).padStart(4,'0');
+    const conf=s<=1?cf:({201:'low',202:'nominal',203:'high'})[cf]; const e=era(i);
+    lines.push([SRC[s],SAT[s],date,tm,P.lat[k].toFixed(4),P.lon[k].toFixed(4),conf,P.frp[k].toFixed(1),TYP[P.type[k]]||P.type[k],(P.flags[k]&1)?'N':'D',P.w[k]>0?'yes':'no',P.e[k].toFixed(3),e===0?'terra_only':e===1?'modis_estimated':'viirs_observed'].join(',')); }
+  saveFile(`firms_hotspots_${slug()}_${ymStr(S.from)}-${ymStr(S.to)}.csv`,lines.join('\n')+'\n'); };
+$('#x-cal').onclick=()=>{ const g=S.agg; const lines=['year,month,harmonized_snpp_equivalent,low80,high80,source_period,modis_terra,modis_aqua,viirs_snpp,viirs_noaa20,static_sources,baseline_median,baseline_percentile,class'];
+  const keep=S.series; S.series='harm';
+  for(let i=S.from;i<=S.to;i++){ const v=g.H[i], e=era(i), [lo,hi]=band(v,e); const b=baselineVals(i).map(o=>o.v); const p=e===0?NaN:pctRank(v,b); const c=e===0?null:classOf(p);
+    lines.push([yOf(i),mOf(i),v.toFixed(1),lo.toFixed(1),hi.toFixed(1),e===0?'terra_only':e===1?'modis_estimated':'viirs_observed',g.MT[i],g.MA[i],i>=mi(2012,1)?g.VS[i]:'',i>=mi(2018,4)?g.V1[i]:'',g.ST[i],b.length?quant(b,.5).toFixed(1):'',isNaN(p)?'':p.toFixed(3),c==null?'':CLASSES[c].lab].join(',')); }
+  S.series=keep; saveFile(`fire_calendar_${slug()}_${ymStr(S.from)}-${ymStr(S.to)}.csv`,lines.join('\n')+'\n'); };
+
+// ---------- refresh ----------
+function refresh(reagg){ if(reagg||!S.agg) aggregate();
+  $('#exp-sub').textContent=`Files cover ${$('#aoi-name').textContent.toLowerCase()} from ${MON[mOf(S.from)-1]} ${yOf(S.from)} to ${MON[mOf(S.to)-1]} ${yOf(S.to)}. ${fmt(S.agg.idx.length)} detections in this area across all years.`;
+  renderCalendar(); renderReadout(); renderCheck(); fireLayer.redraw(); }
+let rt; window.addEventListener('resize',()=>{clearTimeout(rt); rt=setTimeout(()=>{renderCheck(); renderReadout();},150);});
+const mq=matchMedia('(prefers-color-scheme: dark)'); const rerender=()=>{ renderCalendar(); renderCheck(); renderReadout(); fireLayer.redraw(); if(aoiShape) aoiShape.setStyle(shapeStyle()); };
+mq.addEventListener&&mq.addEventListener('change',rerender); new MutationObserver(rerender).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+renderMethod(); refresh(true); $('#loading').remove();
+window.__agun={S,P,meta};   // for checking in the console
+})();
+</script>
+</body></html>
