@@ -1,0 +1,92 @@
+{
+ "configuration": "identical for every country: weight k(calendar month, 0.5-deg cell), empirical-Bayes shrinkage alpha=20, fitted on the 2012-2021 MODIS/S-NPP overlap, leave-one-year-out cross-validation. No per-country tuning.",
+ "note": "Bangladesh is re-run here under the month-as-season configuration, so its numbers differ slightly from the five-season model shipped in the app.",
+ "countries": [
+  {
+   "country": "Bangladesh",
+   "complete_overlap_years": [
+    2012,
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021
+   ],
+   "overlap_detections": {
+    "VIIRS_SNPP": 92078,
+    "MODIS": 23597,
+    "raw_VIIRS_per_MODIS": 3.9
+   },
+   "cells_05deg": 78,
+   "one_ratio": {
+    "national_month_median_abs_pct_err": 43.7,
+    "cell_month_WAPE_pct": 37.9,
+    "total_bias_pct": 0.2,
+    "months_tested": 67,
+    "cell_annual_spearman": 0.907
+   },
+   "month_ratio": {
+    "national_month_median_abs_pct_err": 17.9,
+    "cell_month_WAPE_pct": 37.1,
+    "total_bias_pct": 0.5,
+    "months_tested": 67,
+    "cell_annual_spearman": 0.915
+   },
+   "month_x_cell_shrunk": {
+    "national_month_median_abs_pct_err": 18.6,
+    "cell_month_WAPE_pct": 35.9,
+    "total_bias_pct": 1.5,
+    "months_tested": 67,
+    "cell_annual_spearman": 0.925
+   }
+  },
+  {
+   "country": "Nepal",
+   "skipped": "only 3 complete overlap years retrieved ([2014, 2018, 2020]); NASA FIRMS timed out on the rest, so no cross-validated figure is reported"
+  },
+  {
+   "country": "Portugal",
+   "complete_overlap_years": [
+    2012,
+    2013,
+    2014,
+    2015,
+    2017,
+    2019,
+    2020,
+    2021
+   ],
+   "overlap_detections": {
+    "VIIRS_SNPP": 52985,
+    "MODIS": 25730,
+    "raw_VIIRS_per_MODIS": 2.06
+   },
+   "cells_05deg": 67,
+   "one_ratio": {
+    "national_month_median_abs_pct_err": 27.9,
+    "cell_month_WAPE_pct": 68.8,
+    "total_bias_pct": -0.4,
+    "months_tested": 84,
+    "cell_annual_spearman": 0.916
+   },
+   "month_ratio": {
+    "national_month_median_abs_pct_err": 19.7,
+    "cell_month_WAPE_pct": 73.3,
+    "total_bias_pct": -3.2,
+    "months_tested": 84,
+    "cell_annual_spearman": 0.908
+   },
+   "month_x_cell_shrunk": {
+    "national_month_median_abs_pct_err": 20.0,
+    "cell_month_WAPE_pct": 78.7,
+    "total_bias_pct": -1.0,
+    "months_tested": 84,
+    "cell_annual_spearman": 0.913
+   }
+  }
+ ]
+}

@@ -77,6 +77,45 @@ drifting after 2020, which is why the comparison stops there.
 
 Run it with `python pipeline/control.py` (writes `pipeline/control_test.json`).
 
+### Does the method travel? Portugal
+
+Bangladesh's model groups months into five hand-chosen seasons, which is a Bangladesh
+decision. So for a fair cross-country test every country below is run through one
+identical, country-agnostic configuration — weight k(calendar month, 0.5° cell),
+shrinkage α=20, fitted on the 2012–2021 MODIS/S-NPP overlap, leave-one-year-out —
+with no per-country tuning. Bangladesh is re-run under that configuration too, so its
+numbers differ slightly from the five-season model the app ships.
+
+Portugal is about as unlike Bangladesh as a fire regime gets: summer Mediterranean
+wildfire in forest and scrub, against spring jhum burning on cultivated hillsides.
+
+| | Bangladesh | Portugal |
+|---|---|---|
+| Raw VIIRS per MODIS detection | 3.90 | 2.06 |
+| 0.5° cells with fire | 78 | 67 |
+| National monthly error, one ratio | 43.7% | 27.9% |
+| National monthly error, by month | 17.9% | **19.7%** |
+| National monthly error, month × cell | 18.6% | 20.0% |
+| Cell-month WAPE, one ratio → month → month × cell | 37.9 → 37.1 → 35.9% | 68.8 → 73.3 → **78.7%** |
+
+**It travels, with one honest caveat.** On a fire regime it was never designed for,
+the harmonization reaches 19.7% national monthly error against Bangladesh's 17.9% —
+essentially the same accuracy, with nothing retuned.
+
+But the **spatial refinement does not travel**. In Bangladesh, splitting the ratio by
+0.5° cell improves cell-level error (37.1% → 35.9%); in Portugal it makes it clearly
+worse (73.3% → 78.7%). The likely reason is that Bangladesh's fires return to the same
+jhum fields year after year, so a cell's ratio is stable and worth learning, whereas
+Portugal's wildfires move, so last year's cell ratios are mostly noise. That is an
+interpretation, not a measurement. The practical rule it implies: use the month-only
+model where burning is mobile, and add cells only where burning recurs in place.
+
+Nepal was attempted as a third country and is **not reported**: NASA FIRMS timed out on
+six of its twenty files, leaving only three complete overlap years (2014, 2018, 2020),
+which is too few for a cross-validated figure.
+
+Run it with `python pipeline/travel.py <countries.csv.gz>` (writes `pipeline/travel_test.json`).
+
 ## Reproduce
 ```
 python pipeline/fetch_firms.py        # downloads FIRMS CSVs -> data_in/firms_bd.csv.gz
