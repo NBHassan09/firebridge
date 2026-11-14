@@ -53,6 +53,30 @@ Pick an area (draw a box or shape, enter a point and radius, or choose an exampl
 
 Out of sample, the MODIS-based estimate is within 3–7% of S-NPP in 2023–2025 despite orbital drift of both MODIS platforms. In 2022 MODIS Aqua recorded about 60% of the expected spring hotspots. The NOAA-20 to S-NPP link has an 8% national monthly error.
 
+### Control test: was the 2012 jump real?
+
+Aqua and Terra MODIS flew unchanged across the 2012 boundary, so a MODIS-only series
+is an instrument that did not change. If burning had really surged, MODIS alone would
+show it. Mean hotspots per year, 2003–2011 against 2013–2021 (the 2012 boundary year
+is excluded):
+
+| Series | 2003–2011 | 2013–2021 | Change |
+|---|---|---|---|
+| Aqua MODIS only (control) | 2,922 | 2,041 | **−30.1%** |
+| Terra MODIS only (control) | 285 | 234 | −17.8% |
+| MODIS Terra + Aqua | 3,207 | 2,276 | −29.0% |
+| Raw splice: MODIS, then VIIRS | 3,207 | 9,157 | **+185.5%** |
+| Harmonized (FireBridge) | 12,514 | 9,157 | **−26.8%** |
+
+Burning in Bangladesh **fell** by about 30% between those periods. The raw splice
+reports a 186% rise — wrong by 216 percentage points, and in the opposite direction.
+The harmonized series lands within **3.3 percentage points** of the unchanged-instrument
+control. Aqua is the primary control: its ~13:30 overpass is closest to S-NPP and its
+orbit was stable through 2021. Terra is a second control; its overpass time began
+drifting after 2020, which is why the comparison stops there.
+
+Run it with `python pipeline/control.py` (writes `pipeline/control_test.json`).
+
 ## Reproduce
 ```
 python pipeline/fetch_firms.py        # downloads FIRMS CSVs -> data_in/firms_bd.csv.gz
