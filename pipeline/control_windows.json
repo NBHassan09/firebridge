@@ -1,0 +1,142 @@
+{
+ "question": "Does the control result depend on where the comparison windows are drawn?",
+ "named_windows": [
+  {
+   "label": "published choice",
+   "pre": "2003-2011",
+   "post": "2013-2021",
+   "pre_years": 9,
+   "post_years": 9,
+   "aqua_control": -30.1,
+   "modis_both": -29.0,
+   "raw_splice": 185.5,
+   "harmonized": -26.8
+  },
+  {
+   "label": "one year trimmed each end",
+   "pre": "2004-2011",
+   "post": "2013-2020",
+   "pre_years": 8,
+   "post_years": 8,
+   "aqua_control": -32.1,
+   "modis_both": -31.8,
+   "raw_splice": 176.5,
+   "harmonized": -29.3
+  },
+  {
+   "label": "post period ends 2019",
+   "pre": "2003-2011",
+   "post": "2013-2019",
+   "pre_years": 9,
+   "post_years": 7,
+   "aqua_control": -33.3,
+   "modis_both": -33.2,
+   "raw_splice": 178.9,
+   "harmonized": -28.5
+  },
+  {
+   "label": "post period ends 2017",
+   "pre": "2003-2011",
+   "post": "2013-2017",
+   "pre_years": 9,
+   "post_years": 5,
+   "aqua_control": -36.9,
+   "modis_both": -36.3,
+   "raw_splice": 177.2,
+   "harmonized": -28.9
+  },
+  {
+   "label": "pre period from 2005",
+   "pre": "2005-2011",
+   "post": "2013-2021",
+   "pre_years": 7,
+   "post_years": 9,
+   "aqua_control": -32.0,
+   "modis_both": -31.4,
+   "raw_splice": 176.1,
+   "harmonized": -29.8
+  },
+  {
+   "label": "2012 counted as post-VIIRS",
+   "pre": "2003-2011",
+   "post": "2012-2021",
+   "pre_years": 9,
+   "post_years": 10,
+   "aqua_control": -27.0,
+   "modis_both": -26.3,
+   "raw_splice": 187.6,
+   "harmonized": -26.3
+  },
+  {
+   "label": "symmetric 5 years",
+   "pre": "2007-2011",
+   "post": "2013-2017",
+   "pre_years": 5,
+   "post_years": 5,
+   "aqua_control": -35.4,
+   "modis_both": -34.7,
+   "raw_splice": 184.3,
+   "harmonized": -28.2
+  },
+  {
+   "label": "symmetric 3 years",
+   "pre": "2009-2011",
+   "post": "2013-2015",
+   "pre_years": 3,
+   "post_years": 3,
+   "aqua_control": -23.1,
+   "modis_both": -21.9,
+   "raw_splice": 251.1,
+   "harmonized": -12.7
+  },
+  {
+   "label": "adjacent years only",
+   "pre": "2011-2011",
+   "post": "2013-2013",
+   "pre_years": 1,
+   "post_years": 1,
+   "aqua_control": 7.0,
+   "modis_both": 12.4,
+   "raw_splice": 340.1,
+   "harmonized": 5.3
+  }
+ ],
+ "sweep": {
+  "description": "every pre-window 2003..2009 to 2011, against every post-window 2013 to 2016..2021",
+  "n_window_pairs": 42,
+  "aqua_control": {
+   "min": -38.6,
+   "median": -32.0,
+   "max": -24.2,
+   "always_negative": true,
+   "always_positive": false
+  },
+  "modis_both": {
+   "min": -38.4,
+   "median": -31.6,
+   "max": -22.9,
+   "always_negative": true,
+   "always_positive": false
+  },
+  "raw_splice": {
+   "min": 165.9,
+   "median": 184.9,
+   "max": 224.8,
+   "always_negative": false,
+   "always_positive": true
+  },
+  "harmonized": {
+   "min": -32.4,
+   "median": -28.0,
+   "max": -18.4,
+   "always_negative": true,
+   "always_positive": false
+  },
+  "harmonized_minus_control_pct_points": {
+   "min": 0.6,
+   "median": 4.3,
+   "max": 8.9
+  }
+ },
+ "verdict": "The sign is stable: across all 42 window pairs the unchanged-instrument control is negative (-38.6% to -24.2%) and the raw splice is positive (+165.9% to +224.8%). The harmonized series is negative throughout and tracks the control to within 0.6 to 8.9 percentage points."
+}
